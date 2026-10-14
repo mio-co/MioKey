@@ -4,7 +4,7 @@
       <Card>
         <CardHeader>
           <CardTitle>订单支付</CardTitle>
-          <CardDescription>{{ order ? `订单号：${order.orderNo}` : "正在确认订单信息..." }}</CardDescription>
+          <CardDescription class="break-all">{{ order ? `订单号：${order.orderNo}` : error ? "没有找到可以继续支付的订单。" : "正在确认订单信息..." }}</CardDescription>
         </CardHeader>
         <CardContent class="flex flex-col gap-6">
           <Alert v-if="error" variant="destructive"><AlertTitle>无法继续支付</AlertTitle><AlertDescription>{{ error }}</AlertDescription></Alert>
@@ -29,8 +29,16 @@
             </div>
             <Alert v-else><AlertTitle>{{ order.paymentStatus === "PAID" ? "支付成功" : "订单已结束" }}</AlertTitle><AlertDescription>{{ order.paymentStatus === "PAID" ? "支付已确认，可返回订单查看发货进度。" : "该订单当前无法继续支付。" }}</AlertDescription></Alert>
           </template>
-          <p v-else class="py-16 text-center text-sm text-muted-foreground">正在加载订单...</p>
+          <div v-else class="grid gap-5" role="status" aria-busy="true" data-testid="checkout-loading">
+            <span class="sr-only">正在加载订单...</span>
+            <div class="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3"><div v-for="n in 3" :key="n" class="grid gap-2"><span class="h-3 w-12 animate-pulse rounded bg-muted" /><span class="h-4 w-24 animate-pulse rounded bg-muted" /></div></div>
+            <span class="mx-auto mt-2 size-56 animate-pulse rounded-2xl bg-muted" />
+          </div>
         </CardContent>
+        <CardFooter v-if="error && !order" class="flex-wrap justify-end gap-3 border-t pt-5" data-testid="checkout-error-actions">
+          <Button variant="outline" as-child><a href="/">返回首页</a></Button>
+          <Button as-child><a href="/order">查询订单</a></Button>
+        </CardFooter>
         <CardFooter v-if="order" class="justify-end gap-3 border-t pt-5">
           <Button v-if="order.paymentStatus === 'UNPAID' && isQrPaymentOrder(order)" variant="outline" :disabled="resuming" @click="resumePayment">{{ resuming ? "正在生成..." : "重新生成二维码" }}</Button>
           <Button as-child><a :href="orderHref">查看订单</a></Button>

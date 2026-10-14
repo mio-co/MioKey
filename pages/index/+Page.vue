@@ -130,14 +130,14 @@ const visibleProducts = computed(() => {
   );
   if (sort.value === "default") return list;
   const direction = sort.value === "price-asc" ? 1 : -1;
-  return [...list].sort((a, b) => (Number(a.price) - Number(b.price)) * direction);
+  return [...list].sort((a, b) => (Number(a.minPrice ?? a.price) - Number(b.minPrice ?? b.price)) * direction);
 });
 
 function selectCategory(id: number | null) {
   selectedCategory.value = id;
 }
 function scrollToProducts() {
-  document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("products")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
 
 // Keep ?q= / ?category= in the URL (shareable, survives reload) without adding history entries.

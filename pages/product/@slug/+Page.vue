@@ -1,5 +1,5 @@
 <template>
-  <StoreShell bottom-bar>
+  <StoreShell bottom-bar :products="data.searchProducts" :categories="data.searchCategories">
     <div class="mk-page pb-16 pt-1 sm:pt-6 lg:pb-[var(--mk-sec)]">
       <nav class="flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground" :aria-label="messages.shop.product.breadcrumb">
         <a href="/" class="mk-link inline-flex min-h-11 shrink-0 items-center hover:text-foreground sm:min-h-0">{{ messages.shop.home }}</a>
@@ -103,6 +103,10 @@
             <div v-if="discountPreview" class="grid gap-1.5 rounded-[20px] bg-muted/60 p-4 text-sm"><div class="flex justify-between gap-4"><span class="text-muted-foreground">{{ messages.productCheckout.originalAmount }}</span><span class="tabular-nums">¥{{ discountPreview.originalAmount }}</span></div><div class="flex justify-between gap-4"><span class="text-muted-foreground">{{ t(messages.productCheckout.appliedDiscount, { code: discountPreview.code }) }}</span><span class="tabular-nums text-destructive">-¥{{ discountPreview.discountAmount }}</span></div><div class="flex justify-between gap-4 border-t pt-2 font-semibold"><span>{{ messages.productCheckout.amountDue }}</span><span class="tabular-nums">¥{{ discountPreview.finalAmount }}</span></div></div>
 
             <div class="grid gap-3">
+              <div v-if="!discountPreview" class="flex items-baseline justify-between gap-4 text-sm" data-testid="buy-summary" aria-live="polite">
+                <span class="text-muted-foreground">{{ messages.shop.product.total }}<span v-if="displayQuantity > 1" class="tabular-nums"> · ¥{{ selectedSku.price }} × {{ displayQuantity }}</span></span>
+                <span class="font-display text-xl font-semibold tabular-nums">¥{{ displayTotal }}</span>
+              </div>
               <button type="submit" data-testid="buy-submit" class="mk-sweep inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-foreground px-6 text-[15px] font-semibold text-background transition-opacity disabled:pointer-events-none disabled:opacity-40" :disabled="loading || isOutOfStock || (requiresPayment && !methods.length)">
                 {{ loading ? messages.productCheckout.processingOrder : isOutOfStock ? messages.storefront.outOfStock : requiresPayment ? messages.productCheckout.submitAndPay : messages.productCheckout.createFreeOrder }}
               </button>
@@ -131,8 +135,8 @@
     <StickyBuyBar target="[data-testid=buy-submit]" class="mk-buy-bar fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
       <div class="flex items-center gap-3">
         <div class="min-w-0 flex-1">
-          <p class="truncate text-xs text-muted-foreground">{{ selectedSku.name || data.name }}</p>
-          <p class="font-display text-xl font-semibold leading-tight tabular-nums">¥{{ discountPreview?.finalAmount ?? selectedSku.price }}</p>
+          <p class="truncate text-xs text-muted-foreground">{{ selectedSku.name || data.name }}<span v-if="displayQuantity > 1" class="tabular-nums"> × {{ displayQuantity }}</span></p>
+          <p class="font-display text-xl font-semibold leading-tight tabular-nums" data-testid="buy-bar-total">¥{{ displayTotal }}</p>
         </div>
         <button type="submit" form="mk-buy" data-testid="buy-submit-mobile" class="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full bg-foreground px-6 text-sm font-semibold text-background disabled:opacity-40" :disabled="loading || isOutOfStock || (requiresPayment && !methods.length)">
           {{ loading ? messages.productCheckout.processingOrder : isOutOfStock ? messages.storefront.outOfStock : messages.shop.product.mobileBuy }}
@@ -187,7 +191,7 @@ import defaultProductImage from "@/assets/product_img.jpg?url";
 import { clearLocalAddresses, getLocalAddresses, saveLocalAddress, type LocalAddress } from "@/lib/local-addresses";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 import { saveGuestOrder } from "@/lib/local-orders";
-import { cacheQrPayment } from "@/lib/payment-utils";
+import { cacheQrPayment, formatCentsAsYuan } from "@/lib/payment-utils";
 import { runTelefunc, userErrorMessage } from "@/lib/telefunc-client";
 import { onCreateAddress, onListAddresses } from "@/server/address/index.telefunc";
 import { onPreviewDiscount } from "@/server/discount/preview.telefunc";
@@ -219,6 +223,9 @@ const { handleSubmit, validate, values } = useForm<AddressForm>({ validationSche
 const addressFields = computed(() => [{ name: "recipientName", label: messages.value.productCheckout.address.recipientName, autocomplete: "name", required: true }, { name: "phone", label: messages.value.productCheckout.address.phone, autocomplete: "tel", required: true }, { name: "country", label: messages.value.productCheckout.address.country, autocomplete: "country-name", required: true }, { name: "province", label: messages.value.productCheckout.address.province, autocomplete: "address-level1", required: true }, { name: "city", label: messages.value.productCheckout.address.city, autocomplete: "address-level2", required: true }, { name: "district", label: messages.value.productCheckout.address.district, autocomplete: "address-level3", required: true }, { name: "addressLine", label: messages.value.productCheckout.address.addressLine, autocomplete: "street-address", required: true, wide: true }, { name: "postalCode", label: messages.value.productCheckout.address.postalCode, autocomplete: "postal-code", required: false }] as const);
 const addressFieldsWithoutPostalCode = computed(() => addressFields.value.filter((field) => field.name !== "postalCode"));
 const requiresPayment = computed(() => (discountPreview.value?.finalAmount ?? selectedSku.value.price) !== "0.00");
+// Display only: the order amount is still computed on the server; with a discount preview we show its final amount.
+const displayQuantity = computed(() => (Number.isFinite(quantity.value) && quantity.value > 0 ? Math.floor(quantity.value) : selectedSku.value.minBuy));
+const displayTotal = computed(() => { if (discountPreview.value) return discountPreview.value.finalAmount; const cents = Math.round(Number(selectedSku.value.price) * 100) * displayQuantity.value; return Number.isSafeInteger(cents) && cents >= 0 ? formatCentsAsYuan(cents) : selectedSku.value.price; });
 const isStockLimited = computed(() => selectedSku.value.availableStock !== null);
 const availableStock = computed(() => selectedSku.value.availableStock ?? 0);
 const purchaseLimit = computed(() => isStockLimited.value ? Math.max(selectedSku.value.minBuy, Math.min(selectedSku.value.maxBuy, availableStock.value)) : selectedSku.value.maxBuy);

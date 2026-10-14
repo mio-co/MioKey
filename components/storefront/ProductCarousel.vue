@@ -8,7 +8,8 @@ import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 
 /** Hero slideshow of featured products (embla, loop, autoplay that pauses on hover/focus/touch and for reduced motion). */
 const props = defineProps<{ products: CardProduct[] }>();
-const { messages } = useStorefrontPreferences();
+const { messages, t } = useStorefrontPreferences();
+const priceText = (product: CardProduct) => ((product.skuCount ?? 1) > 1 && product.minPrice ? t(messages.value.shop.fromPrice, { price: product.minPrice }) : `¥${product.price}`);
 const [viewport, api] = emblaCarouselVue({ loop: true, align: "start", duration: 32 });
 const index = ref(0);
 const count = computed(() => props.products.length);
@@ -51,7 +52,7 @@ onBeforeUnmount(stop);
                 <div class="min-w-0">
                   <p v-if="product.categoryName" class="mk-eyebrow text-white/75">{{ product.categoryName }}</p>
                   <p class="mk-h3 mt-1 line-clamp-2">{{ product.name }}</p>
-                  <p class="mk-display mt-1 text-lg tabular-nums">¥{{ product.price }}</p>
+                  <p class="mk-display mt-1 text-lg tabular-nums">{{ priceText(product) }}</p>
                 </div>
                 <span class="grid size-12 shrink-0 place-items-center rounded-full bg-white text-black transition-transform duration-500 ease-out-expo group-hover:-rotate-45"><ChevronRightIcon class="size-5" /></span>
               </div>

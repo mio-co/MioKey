@@ -4,10 +4,11 @@ import { ArrowUpRightIcon } from "@lucide/vue";
 import defaultProductImage from "@/assets/product_img.jpg?url";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 
-export type CardProduct = { id: number; name: string; slug: string; subtitle: string | null; coverImage: string | null; price: string; categoryName: string | null; availableStock: number | null };
+export type CardProduct = { id: number; name: string; slug: string; subtitle: string | null; coverImage: string | null; price: string; categoryName: string | null; availableStock: number | null; minPrice?: string; skuCount?: number };
 
 const props = defineProps<{ product: CardProduct; eager?: boolean }>();
 const { messages, t } = useStorefrontPreferences();
+const priceText = computed(() => (props.product.skuCount ?? 1) > 1 && props.product.minPrice ? t(messages.value.shop.fromPrice, { price: props.product.minPrice }) : `¥${props.product.price}`);
 const soldOut = computed(() => props.product.availableStock === 0);
 const lowStock = computed(() => props.product.availableStock !== null && props.product.availableStock > 0 && props.product.availableStock <= 5);
 const stockText = computed(() => {
@@ -36,7 +37,7 @@ const stockText = computed(() => {
       <h3 class="mk-display mt-0.5 line-clamp-2 text-[15px] leading-6 sm:text-base"><a :href="`/product/${product.slug}`" class="mk-link">{{ product.name }}</a></h3>
       <p v-if="product.subtitle" class="mt-1 line-clamp-1 text-[13px] text-muted-foreground">{{ product.subtitle }}</p>
       <div class="mt-auto flex items-end justify-between gap-2 pt-2.5">
-        <span class="mk-display text-base tabular-nums sm:text-[17px]">¥{{ product.price }}</span>
+        <span class="mk-display text-base tabular-nums sm:text-[17px]" data-testid="card-price">{{ priceText }}</span>
         <span :class="['text-xs', soldOut ? 'text-muted-foreground' : lowStock ? 'text-warning' : 'text-success']">{{ stockText }}</span>
       </div>
     </div>

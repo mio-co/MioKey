@@ -232,6 +232,11 @@
 .mk-js .mk-reveal.is-in { opacity: 1; transform: none; }
 
 @media (prefers-reduced-motion: reduce) {
+  /* ui-ux-pro-max motion rule: no movement for users who ask for less. Entrances become instant,
+     transforms stop animating; colour/opacity feedback on hover/focus stays (short, not motion). */
+  .mk-store *, .mk-store *::before, .mk-store *::after { animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+  .mk-store * { transition-property: color, background-color, border-color, opacity, box-shadow !important; }
+  html:has(.mk-store) { scroll-behavior: auto; }
   .mk-marquee { animation: none; }
   .mk-js .mk-reveal { opacity: 1; transform: none; transition: none; }
   .mk-card-media img, .mk-sweep::before, .mk-link { transition: none; }

@@ -11,7 +11,7 @@ import { useScrollDirection } from "@/lib/ui/scroll-direction";
 import { useStorefrontPreferences, type StorefrontLocale } from "@/lib/storefront-preferences";
 import defaultProductImage from "@/assets/product_img.jpg?url";
 
-export type HeaderProduct = { id: number | string; name: string; slug: string; subtitle?: string | null; coverImage?: string | null; price: string; categoryName?: string | null };
+export type HeaderProduct = { id: number | string; name: string; slug: string; subtitle?: string | null; coverImage?: string | null; price: string; categoryName?: string | null; minPrice?: string; skuCount?: number };
 export type HeaderCategory = { id: number; name: string };
 
 const props = withDefaults(defineProps<{ products?: HeaderProduct[]; categories?: HeaderCategory[]; narrow?: boolean }>(), { products: () => [], categories: () => [], narrow: false });
@@ -39,11 +39,15 @@ const navLinks = computed(() => [
     : { href: "/order", label: messages.value.nav.orderLookup, active: pathname.value === "/order" },
 ]);
 
-const results = computed(() => {
+const matches = computed(() => {
   const keyword = query.value.trim().toLowerCase();
-  if (!keyword) return props.products.slice(0, 4);
-  return props.products.filter((item) => item.name.toLowerCase().includes(keyword) || item.subtitle?.toLowerCase().includes(keyword)).slice(0, 6);
+  if (!keyword) return [];
+  return props.products.filter((item) => [item.name, item.subtitle, item.categoryName].some((text) => text?.toLowerCase().includes(keyword)));
 });
+/** No keyword, or nothing matched: fall back to recommended products so the panel is never a dead end (amaeru.com search). */
+const noMatch = computed(() => !!query.value.trim() && !matches.value.length);
+const results = computed(() => (query.value.trim() && matches.value.length ? matches.value.slice(0, 6) : props.products.slice(0, 4)));
+const priceText = (item: HeaderProduct) => ((item.skuCount ?? 1) > 1 && item.minPrice ? t(messages.value.shop.fromPrice, { price: item.minPrice }) : `¥${item.price}`);
 
 watch(() => pageContext.urlPathname, () => { menuOpen.value = false; searchOpen.value = false; });
 
@@ -55,7 +59,7 @@ function openSearch() { menuOpen.value = false; searchOpen.value = true; }
 function goHomeSection(event: MouseEvent, href: string) {
   if (!href.startsWith("/#") || pathname.value !== "/") return;
   event.preventDefault();
-  document.querySelector(href.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.querySelector(href.slice(1))?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
 const locales: { key: StorefrontLocale; label: string }[] = [
   { key: "zh-CN", label: "简体中文" },
@@ -135,9 +139,9 @@ const locales: { key: StorefrontLocale; label: string }[] = [
               </div>
             </div>
             <div class="min-w-0">
-              <p class="mk-eyebrow text-muted-foreground">{{ query.trim() ? messages.shop.searchResults : messages.shop.featured }}</p>
-              <p v-if="query.trim() && !results.length && products.length" class="mt-3 text-sm text-muted-foreground">{{ messages.shop.searchEmpty }}</p>
-              <p v-else-if="!products.length" class="mt-3 text-sm text-muted-foreground">{{ messages.shop.searchHint }}</p>
+              <p v-if="noMatch" class="mb-5 rounded-2xl bg-muted/70 px-4 py-3 text-sm" role="status" data-testid="search-no-match">{{ messages.shop.searchEmpty }}</p>
+              <p class="mk-eyebrow text-muted-foreground">{{ query.trim() && !noMatch ? t(messages.storefront.relatedProducts, { count: matches.length }) : messages.shop.featured }}</p>
+              <p v-if="!products.length" class="mt-3 text-sm text-muted-foreground">{{ messages.shop.searchHint }}</p>
               <ul class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 <li v-for="item in results" :key="item.id">
                   <a :href="`/product/${item.slug}`" class="group flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-muted" @click="navigateFromSearch(`/product/${item.slug}`, $event)">
@@ -145,13 +149,13 @@ const locales: { key: StorefrontLocale; label: string }[] = [
                     <span class="min-w-0 flex-1">
                       <span v-if="item.categoryName" class="block truncate text-xs text-muted-foreground">{{ item.categoryName }}</span>
                       <span class="mk-display block truncate text-[15px]">{{ item.name }}</span>
-                      <span class="block text-sm font-semibold tabular-nums">¥{{ item.price }}</span>
+                      <span class="block text-sm font-semibold tabular-nums">{{ priceText(item) }}</span>
                     </span>
                     <ChevronRightIcon class="size-4 shrink-0 text-muted-foreground transition-transform duration-300 group-hover:translate-x-0.5" />
                   </a>
                 </li>
               </ul>
-              <button v-if="query.trim()" type="button" class="mk-link mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" @click="submitSearch">{{ messages.shop.viewAll }} <ArrowRightIcon class="size-4" /></button>
+              <button v-if="query.trim() && !noMatch" type="button" class="mk-link mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" @click="submitSearch">{{ messages.shop.viewAll }} <ArrowRightIcon class="size-4" /></button>
             </div>
           </div>
         </div>
