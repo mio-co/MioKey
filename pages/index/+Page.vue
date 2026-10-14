@@ -1,39 +1,41 @@
 <template>
   <StoreShell :products="data.products" :categories="data.categories">
     <!-- Catalogue -->
-    <section id="products" class="mk-page mk-sec scroll-mt-20 pt-8 sm:pt-10">
-      <div class="flex flex-wrap items-end justify-between gap-4">
-        <h1 class="mk-h2">{{ query ? t(messages.storefront.relatedProducts, { count: visibleProducts.length }) : messages.shop.allProducts }}</h1>
-        <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <div class="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
-            <SearchIcon class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input v-model="query" type="search" class="pl-10!" :placeholder="messages.storefront.searchProducts" :aria-label="messages.storefront.searchProducts" />
-          </div>
-          <SortSelect v-model="sort" />
-        </div>
-      </div>
+    <section id="products" class="mk-page scroll-mt-20 pb-12 pt-1 sm:pb-16 sm:pt-2">
+      <h1 class="sr-only">{{ query ? t(messages.storefront.relatedProducts, { count: visibleProducts.length }) : messages.shop.allProducts }}</h1>
 
-      <div v-if="data.categories.length" class="sticky top-16 z-30 -mx-[var(--mk-pad)] mt-6 bg-background/85 px-[var(--mk-pad)] py-3 backdrop-blur-xl lg:top-[72px]">
-        <div class="mk-no-scrollbar flex gap-2 overflow-x-auto" role="tablist" :aria-label="messages.storefront.categories">
+      <!-- Toolbar: category tabs scroll on the left, sort pinned to the right; sticks under the header. -->
+      <div class="sticky top-16 z-30 -mx-[var(--mk-pad)] flex items-center gap-3 border-b border-transparent bg-background/85 px-[var(--mk-pad)] py-3 backdrop-blur-xl lg:top-[72px]">
+        <div v-if="data.categories.length" class="mk-no-scrollbar mk-fade-right flex min-w-0 flex-1 gap-2 overflow-x-auto pr-6" role="tablist" :aria-label="messages.storefront.categories">
           <button
             v-for="item in categoryTabs"
             :key="String(item.id)"
             type="button"
             role="tab"
             :aria-selected="selectedCategory === item.id"
-            class="h-11 shrink-0 rounded-full md:h-10 border px-5 text-sm font-medium transition-colors duration-300 hover:border-foreground aria-selected:border-foreground aria-selected:bg-foreground aria-selected:text-background"
+            class="h-11 shrink-0 rounded-full border px-5 text-sm font-medium transition-colors duration-300 hover:border-foreground aria-selected:border-foreground aria-selected:bg-foreground aria-selected:text-background md:h-10"
             @click="selectCategory(item.id)"
           >
-            {{ item.name }}<span class="ml-1.5 text-xs opacity-60 tabular-nums">{{ item.count }}</span>
+            {{ item.name }}<span class="ml-1.5 text-xs tabular-nums opacity-60">{{ item.count }}</span>
           </button>
+        </div>
+        <div v-else class="flex-1" />
+        <div class="shrink-0">
+          <SortSelect v-model="sort" />
         </div>
       </div>
 
-      <TransitionGroup v-if="visibleProducts.length" tag="div" name="mk-grid" class="mt-6 grid grid-cols-1 gap-x-3 gap-y-8 sm:grid-cols-2 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7 lg:gap-y-10 xl:grid-cols-4">
+      <!-- Header search lands here as ?q=; show what was searched and a way out. -->
+      <div v-if="query" class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground" aria-live="polite">
+        <span>{{ t(messages.storefront.relatedProducts, { count: visibleProducts.length }) }} · “{{ query }}”</span>
+        <button type="button" class="inline-flex h-11 items-center font-medium text-foreground underline-offset-4 hover:underline md:h-8" @click="query = ''">{{ messages.shop.clearSearch }}</button>
+      </div>
+
+      <TransitionGroup v-if="visibleProducts.length" tag="div" name="mk-grid" class="mt-4 grid grid-cols-1 gap-x-3 gap-y-8 sm:grid-cols-2 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7 lg:gap-y-10 xl:grid-cols-4">
         <ProductCard v-for="(product, index) in visibleProducts" :key="product.id" :product="product" :eager="index < 4" />
       </TransitionGroup>
 
-      <div v-else class="mt-8 grid place-items-center rounded-[24px] border border-dashed px-6 py-20 text-center">
+      <div v-else class="mt-4 grid place-items-center rounded-[24px] border border-dashed px-6 py-20 text-center">
         <span class="grid size-14 place-items-center rounded-full bg-muted"><PackageOpenIcon class="size-6 text-muted-foreground" /></span>
         <h3 class="mk-display mt-4 text-lg">{{ query ? messages.shop.searchEmpty : messages.storefront.noProducts }}</h3>
         <p v-if="!query" class="mt-2 text-sm text-muted-foreground">{{ messages.storefront.noProductsDescription }}</p>
@@ -41,7 +43,7 @@
       </div>
     </section>
     <!-- Service strip -->
-    <section class="mt-4 border-y bg-muted/40">
+    <section class="border-t">
       <ul class="mk-page grid grid-cols-2 gap-x-4 gap-y-6 py-7 lg:grid-cols-4 lg:py-9">
         <li v-for="item in services" :key="item.title" class="flex items-start gap-3">
           <span class="grid size-11 shrink-0 place-items-center rounded-full bg-background ring-1 ring-border"><component :is="item.icon" class="size-5" /></span>
@@ -57,13 +59,12 @@
 
 <script lang="ts" setup>
 import { computed, defineAsyncComponent, hydrateOnVisible, onMounted, ref, watch } from "vue";
-import { HeadphonesIcon, PackageOpenIcon, ReceiptTextIcon, SearchIcon, ShieldCheckIcon, ZapIcon } from "@lucide/vue";
+import { HeadphonesIcon, PackageOpenIcon, ReceiptTextIcon, ShieldCheckIcon, ZapIcon } from "@lucide/vue";
 import { useData } from "vike-vue/useData";
 import { usePageContext } from "vike-vue/usePageContext";
 import ProductCard from "@/components/storefront/ProductCard.vue";
 import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { Data } from "./+data.server";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 
@@ -125,6 +126,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.mk-fade-right { mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
 .mk-grid-move { transition: transform 0.6s var(--ease-out-expo); }
 .mk-grid-enter-active { transition: opacity 0.45s var(--ease-out-expo), transform 0.45s var(--ease-out-expo); }
 .mk-grid-enter-from { opacity: 0; transform: translateY(12px) scale(0.98); }

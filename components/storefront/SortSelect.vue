@@ -1,6 +1,6 @@
 <template>
   <Select v-model="model">
-    <SelectTrigger class="w-auto min-w-36" :aria-label="messages.shop.sortLabel"><SelectValue /></SelectTrigger>
+    <SelectTrigger class="w-auto min-w-28 sm:min-w-36" :aria-label="messages.shop.sortLabel"><SelectValue /></SelectTrigger>
     <SelectContent class="rounded-2xl">
       <SelectItem value="default">{{ messages.shop.sortDefault }}</SelectItem>
       <SelectItem value="price-asc">{{ messages.shop.sortPriceAsc }}</SelectItem>
