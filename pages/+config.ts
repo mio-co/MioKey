@@ -9,9 +9,9 @@ const config: Config = {
   description: "",
 
   passToClient: ["user", "site", "rootInitialized", "registrationEnabled"],
-  // https://vike.dev/prefetch — on link hover, fetch the page's JS/CSS and also its pageContext (server data),
-  // cached for 5s, so most clicks render without waiting for the network. Links with side effects are buttons.
-  prefetch: { staticAssets: "hover", pageContext: 5000 },
+  // https://vike.dev/prefetch — on link hover, fetch only the page's JS/CSS. pageContext (server data)
+  // prefetch is off: in vike 0.4.260 it trips an internal assertion ("You stumbled upon a Vike bug").
+  prefetch: { staticAssets: "hover" },
   extends: [vikeVue],
 };
 
