@@ -22,23 +22,20 @@
     <!-- Service strip -->
     <section class="border-y bg-muted/40">
       <ul class="mk-page grid grid-cols-2 gap-x-4 gap-y-6 py-7 lg:grid-cols-4 lg:py-9">
-        <Reveal v-for="(item, index) in services" :key="item.title" as="li" :delay="index * 70" class="flex items-start gap-3">
+        <li v-for="item in services" :key="item.title" class="flex items-start gap-3">
           <span class="grid size-11 shrink-0 place-items-center rounded-full bg-background ring-1 ring-border"><component :is="item.icon" class="size-5" /></span>
           <span class="min-w-0">
             <span class="mk-display block text-[15px]">{{ item.title }}</span>
             <span class="mt-0.5 block text-[13px] leading-5 text-muted-foreground">{{ item.text }}</span>
           </span>
-        </Reveal>
+        </li>
       </ul>
     </section>
 
     <!-- Catalogue -->
     <section id="products" class="mk-page mk-sec scroll-mt-20">
       <div class="flex flex-wrap items-end justify-between gap-4">
-        <Reveal>
-          <p class="mk-eyebrow text-muted-foreground">{{ messages.storefront.products }}</p>
-          <h2 class="mk-h2 mt-2">{{ query ? t(messages.storefront.relatedProducts, { count: visibleProducts.length }) : messages.shop.allProducts }}</h2>
-        </Reveal>
+        <h2 class="mk-h2">{{ query ? t(messages.storefront.relatedProducts, { count: visibleProducts.length }) : messages.shop.allProducts }}</h2>
         <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <div class="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
             <SearchIcon class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -72,9 +69,7 @@
       </div>
 
       <TransitionGroup v-if="visibleProducts.length" tag="div" name="mk-grid" class="mt-6 grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7 lg:gap-y-10 xl:grid-cols-4">
-        <Reveal v-for="(product, index) in visibleProducts" :key="product.id" :delay="(index % 4) * 70">
-          <ProductCard :product="product" :eager="index < 4" />
-        </Reveal>
+        <ProductCard v-for="(product, index) in visibleProducts" :key="product.id" :product="product" :eager="index < 4" />
       </TransitionGroup>
 
       <div v-else class="mt-8 grid place-items-center rounded-[24px] border border-dashed px-6 py-20 text-center">
@@ -98,7 +93,6 @@ import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Reveal from "@/components/storefront/Reveal.vue";
 import type { Data } from "./+data.server";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 

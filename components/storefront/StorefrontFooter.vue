@@ -1,7 +1,7 @@
 <template>
   <footer class="mk-store mt-auto border-t bg-muted/40">
-    <div class="mk-page grid gap-10 py-12 md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] md:py-16">
-      <div class="max-w-sm">
+    <div class="mk-page grid grid-cols-2 gap-x-6 gap-y-10 py-12 md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] md:py-16">
+      <div class="col-span-2 max-w-sm md:col-span-1">
         <StorefrontBrand />
         <p v-if="site.footerText" class="mt-4 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{{ site.footerText }}</p>
       </div>

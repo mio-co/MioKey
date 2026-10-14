@@ -1,7 +1,5 @@
 <template>
   <nav class="flex shrink-0 items-center gap-0.5 sm:gap-1" :aria-label="messages.nav.main">
-    <a v-if="user" href="/account/order" class="mk-link mr-2 hidden py-1 text-sm font-medium lg:inline-block">{{ messages.nav.myOrders }}</a>
-    <a v-else href="/order" class="mk-link mr-2 hidden py-1 text-sm font-medium lg:inline-block">{{ messages.nav.orderLookup }}</a>
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
         <Button type="button" variant="ghost" size="icon" class="hidden rounded-full md:inline-flex" :aria-label="messages.preferences.language" :title="messages.preferences.language">

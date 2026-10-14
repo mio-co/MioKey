@@ -71,8 +71,8 @@
 
 :root {
   --radius: 0.75rem;
-  --success: oklch(0.6 0.13 160);
-  --warning: oklch(0.7 0.15 70);
+  --success: oklch(0.52 0.12 160);
+  --warning: oklch(0.56 0.14 60);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -197,7 +197,7 @@
 .mk-h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, calc(2.339vw + 10.06px), 40px); line-height: 1.2; }
 .mk-h2 { font-family: var(--font-display); font-weight: 600; font-size: clamp(22.4px, calc(1.871vw + 8.05px), 32px); line-height: 1.3125; }
 .mk-h3 { font-family: var(--font-display); font-weight: 600; font-size: clamp(19.6px, calc(1.637vw + 7.04px), 28px); line-height: 1.357; }
-.mk-eyebrow { font-family: var(--font-display); font-weight: 600; font-size: 13px; line-height: 20px; letter-spacing: 0.08em; text-transform: uppercase; }
+.mk-eyebrow { font-family: var(--font-display); font-weight: 500; font-size: 13px; line-height: 20px; }
 
 /* Product card media: slow zoom on hover (1.3s expo-out), like the reference theme. */
 .mk-card-media { position: relative; overflow: hidden; border-radius: var(--radius-xl); background: var(--muted); }
@@ -260,6 +260,11 @@
   }
 
   html { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]), summary, label[for] { cursor: pointer; }
+  /* Visible keyboard focus everywhere in the storefront (custom pills, links, drawer items). */
+  .mk-store :where(a, button, summary, input, [tabindex]):focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; }
+  /* The phone buy bar must not hide the focused field (WCAG focus not obscured). */
+  @media (max-width: 1023.98px) { html:has(.mk-buy-bar) { scroll-padding-bottom: 104px; } }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     text-rendering: optimizeLegibility;

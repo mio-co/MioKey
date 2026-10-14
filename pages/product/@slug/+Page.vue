@@ -11,8 +11,10 @@
 
       <section class="mt-4 grid gap-8 sm:mt-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-14 xl:gap-20">
         <div class="min-w-0">
-          <div class="mk-card-media aspect-[4/3] lg:sticky lg:top-24">
-            <img :src="data.coverImage || defaultProductImage" :alt="data.name" class="size-full animate-fade-in object-cover" fetchpriority="high" />
+          <div class="lg:sticky lg:top-24">
+            <div class="mk-card-media aspect-[4/3]">
+              <img :src="data.coverImage || defaultProductImage" :alt="data.name" class="size-full animate-fade-in object-cover" fetchpriority="high" />
+            </div>
           </div>
         </div>
 
@@ -103,7 +105,6 @@
             <div class="grid gap-3">
               <button type="submit" data-testid="buy-submit" class="mk-sweep inline-flex h-14 w-full items-center justify-center gap-2 rounded-full bg-foreground px-6 text-[15px] font-semibold text-background transition-opacity disabled:pointer-events-none disabled:opacity-40" :disabled="loading || isOutOfStock || (requiresPayment && !methods.length)">
                 {{ loading ? messages.productCheckout.processingOrder : isOutOfStock ? messages.storefront.outOfStock : requiresPayment ? messages.productCheckout.submitAndPay : messages.productCheckout.createFreeOrder }}
-                <ArrowRightIcon v-if="!loading && !isOutOfStock" class="size-4" />
               </button>
               <p class="flex items-start gap-2 text-xs leading-5 text-muted-foreground"><ShieldCheckIcon class="mt-0.5 size-3.5 shrink-0" />{{ messages.productCheckout.paymentAmountNotice }}</p>
             </div>
@@ -127,7 +128,7 @@
     </div>
 
     <!-- Phone: sticky buy bar that submits the same form. -->
-    <div class="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
+    <div class="mk-buy-bar fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
       <div class="flex items-center gap-3">
         <div class="min-w-0 flex-1">
           <p class="truncate text-xs text-muted-foreground">{{ selectedSku.name || data.name }}</p>
@@ -168,7 +169,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { toTypedSchema } from "@vee-validate/zod";
 import { Field as VeeField, useForm } from "vee-validate";
 import { z } from "zod";
-import { ArrowRightIcon, ChevronRightIcon, MinusIcon, PlusIcon, ShieldCheckIcon, XIcon } from "@lucide/vue";
+import { ChevronRightIcon, MinusIcon, PlusIcon, ShieldCheckIcon, XIcon } from "@lucide/vue";
 import { toast } from "vue-sonner";
 import { useData } from "vike-vue/useData";
 import { usePageContext } from "vike-vue/usePageContext";
