@@ -2,7 +2,7 @@
   <div class="flex items-center gap-1">
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
-        <Button type="button" variant="ghost" size="icon" :aria-label="messages.preferences.language" :title="messages.preferences.language">
+        <Button type="button" variant="ghost" size="icon" class="size-11 rounded-full" :aria-label="messages.preferences.language" :title="messages.preferences.language">
           <LanguagesIcon />
         </Button>
       </DropdownMenuTrigger>
@@ -16,7 +16,7 @@
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
-    <Button type="button" variant="ghost" size="icon" :aria-label="theme === 'light' ? messages.preferences.dark : messages.preferences.light" :title="theme === 'light' ? messages.preferences.dark : messages.preferences.light" @click="setTheme(theme === 'light' ? 'dark' : 'light')">
+    <Button type="button" variant="ghost" size="icon" class="size-11 rounded-full" :aria-label="theme === 'light' ? messages.preferences.dark : messages.preferences.light" :title="theme === 'light' ? messages.preferences.dark : messages.preferences.light" @click="setTheme(theme === 'light' ? 'dark' : 'light')">
       <SunIcon v-if="theme === 'light'" />
       <MoonIcon v-else />
     </Button>
