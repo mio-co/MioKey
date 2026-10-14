@@ -48,15 +48,13 @@ const isPrivatePage = computed(() => {
   return Boolean(pageContext.routeParams?.adminPath) || pathname === "/setup" || pathname === "/order" || pathname === "/checkout" || pathname === "/payment-result" || pathname.startsWith("/_error");
 });
 const siteUrl = computed(() => normalizeOrigin(pageContext.site?.siteUrl) || normalizeOrigin(pageContext.urlParsed?.origin));
-/** Mirrors what the page renders first: product cover, or the home carousel's first slide (first in-stock product). The bundled placeholder is not preloaded. */
+/** Mirrors what the page renders first: product cover, or the first card of the home product grid. The bundled placeholder is not preloaded. */
 const lcpImage = computed(() => {
   const pathname = pageContext.urlPathname || "/";
   const data = pageContext.data;
   if (pathname.startsWith("/product/") && data?.name) return data.coverImage || null;
   if (pathname === "/" && data?.products?.length) {
-    const inStock = data.products.filter((item) => item.availableStock !== 0);
-    const first = (inStock.length ? inStock : data.products)[0];
-    return first.coverImage || null;
+    return data.products[0].coverImage || null;
   }
   return null;
 });

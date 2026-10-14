@@ -31,6 +31,7 @@ const { navigateFromDrawer: navigateFromSearch } = useDrawerHistory(searchOpen, 
 const notice = computed(() => pageContext.site?.notice?.trim() || "");
 const user = computed(() => pageContext.user ?? null);
 const pathname = computed(() => pageContext.urlPathname || "/");
+const currentCategory = computed(() => (pathname.value === "/" ? pageContext.urlParsed?.search?.category ?? null : null));
 const navLinks = computed(() => [
   { href: "/", label: messages.value.shop.home, active: pathname.value === "/" },
   { href: "/#products", label: messages.value.shop.allProducts, active: pathname.value.startsWith("/product/") },
@@ -181,6 +182,20 @@ const locales: { key: StorefrontLocale; label: string }[] = [
           >{{ link.label }}<ChevronRightIcon class="size-5 text-muted-foreground" /></a>
           <a v-if="user" href="/account" class="mk-menu-item mk-display flex items-center justify-between border-b py-4 text-[19px]" :style="{ '--i': navLinks.length }" @click="navigateFromMenu('/account', $event)">{{ messages.nav.accountSettings }}<ChevronRightIcon class="size-5 text-muted-foreground" /></a>
           <button type="button" class="mk-menu-item mk-display flex w-full items-center justify-between border-b py-4 text-left text-[19px]" :style="{ '--i': navLinks.length + 1 }" @click="openSearch">{{ messages.shop.search }}<SearchIcon class="size-5 text-muted-foreground" /></button>
+
+          <div v-if="categories.length" class="mt-6">
+            <p class="mb-2 text-sm text-muted-foreground">{{ messages.storefront.categories }}</p>
+            <div class="flex flex-wrap gap-2">
+              <a
+                v-for="category in categories"
+                :key="category.id"
+                :href="`/?category=${category.id}#products`"
+                :aria-current="currentCategory === String(category.id) ? 'page' : undefined"
+                class="inline-flex h-11 items-center rounded-full border px-4 text-sm transition-colors duration-300 hover:border-foreground aria-[current=page]:border-foreground aria-[current=page]:bg-foreground aria-[current=page]:text-background md:h-10"
+                @click="navigateFromMenu(`/?category=${category.id}#products`, $event)"
+              >{{ category.name }}</a>
+            </div>
+          </div>
 
           <div class="mt-6 grid gap-4">
             <div>
