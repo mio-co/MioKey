@@ -169,6 +169,28 @@
 .mk-store [data-slot="input"]:not([type="file"]),
 .mk-store [data-slot="select-trigger"] { min-height: 2.75rem; padding-inline: 1.125rem; }
 
+/* shadcn pieces inside the storefront: softer cards, display-font titles, heavier pill buttons.
+   Layered as components so page utilities can still override them. */
+@layer components {
+  .mk-store [data-slot="card"] { border-color: color-mix(in oklab, var(--border) 85%, transparent); box-shadow: none; }
+  .mk-store [data-slot="card-title"] { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
+  .mk-store [data-slot="button"] { font-weight: 600; }
+  .mk-store [data-slot="button"]:not([data-size^="icon"]):not([data-size="sm"]):not([data-size="xs"]):not(.mk-square) { min-height: 2.75rem; }
+  .mk-store [data-slot="alert"] { border-radius: 18px; }
+}
+
+/* Auth pages: the card dissolves into the page; the title carries the hierarchy. */
+.mk-auth [data-slot="card"] { border: 0; background: transparent; padding-block: 0; gap: 1.75rem; }
+.mk-auth [data-slot="card"] > [data-slot="card-header"],
+.mk-auth [data-slot="card"] [data-slot="card-content"],
+.mk-auth [data-slot="card"] [data-slot="card-footer"] { padding-inline: 0; }
+.mk-auth [data-slot="card-title"] { font-size: clamp(26px, calc(1.6vw + 14px), 34px); text-align: left; }
+.mk-auth [data-slot="alert"] + [data-slot="alert"] { margin-top: 0.75rem; }
+
+/* Quantity stepper: hide native spinners. */
+.mk-qty input::-webkit-outer-spin-button, .mk-qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.mk-qty input { -moz-appearance: textfield; appearance: textfield; }
+
 .mk-page { width: 100%; max-width: 1440px; margin-inline: auto; padding-inline: var(--mk-pad, 1rem); }
 .mk-sec { padding-block: var(--mk-sec, 4rem); }
 .mk-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }

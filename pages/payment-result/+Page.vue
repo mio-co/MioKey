@@ -1,12 +1,6 @@
 <template>
-  <main class="min-h-screen bg-muted/30">
-    <header class="fixed inset-x-0 top-0 z-50 border-b bg-background/95 backdrop-blur">
-      <div class="mx-auto flex min-h-16 max-w-2xl items-center justify-between px-5">
-        <StorefrontBrand />
-        <PublicNav />
-      </div>
-    </header>
-    <section class="mx-auto max-w-2xl px-5 pb-10 pt-26">
+  <StoreShell tone="muted">
+    <section class="mx-auto max-w-2xl px-5 pb-16 pt-8 sm:pt-12 lg:pb-20">
       <Card>
         <CardHeader>
           <CardTitle>{{ order ? "支付结果" : "确认支付结果" }}</CardTitle>
@@ -30,7 +24,7 @@
         </CardFooter>
       </Card>
     </section>
-  </main>
+  </StoreShell>
 </template>
 
 <script lang="ts" setup>
@@ -38,8 +32,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 import { useData } from "vike-vue/useData";
 import { usePageContext } from "vike-vue/usePageContext";
-import PublicNav from "@/components/storefront/PublicNav.vue";
-import StorefrontBrand from "@/components/storefront/StorefrontBrand.vue";
+import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

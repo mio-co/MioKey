@@ -1,13 +1,6 @@
 <template>
-  <main class="min-h-screen bg-muted/30">
-    <header class="fixed inset-x-0 top-0 z-50 border-b bg-background/95 backdrop-blur">
-      <div class="mx-auto flex min-h-16 max-w-2xl items-center justify-between px-5">
-        <StorefrontBrand />
-        <PublicNav />
-      </div>
-    </header>
-
-    <section class="mx-auto max-w-2xl px-5 pb-12 pt-26">
+  <StoreShell tone="muted">
+    <section class="mx-auto max-w-2xl px-5 pb-16 pt-8 sm:pt-12 lg:pb-20">
       <Card>
         <CardHeader>
           <CardTitle>订单支付</CardTitle>
@@ -44,15 +37,14 @@
         </CardFooter>
       </Card>
     </section>
-  </main>
+  </StoreShell>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 import PaymentQrCode from "@/components/PaymentQrCode.vue";
-import PublicNav from "@/components/storefront/PublicNav.vue";
-import StorefrontBrand from "@/components/storefront/StorefrontBrand.vue";
+import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

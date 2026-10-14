@@ -1,15 +1,8 @@
 <template>
-  <main class="min-h-screen bg-muted/30">
-    <header class="fixed inset-x-0 top-0 z-50 border-b bg-background/95 backdrop-blur">
-      <div class="mx-auto flex min-h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <StorefrontBrand />
-        <PublicNav />
-      </div>
-    </header>
-
-    <section class="mx-auto max-w-6xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28">
+  <StoreShell tone="muted">
+    <section class="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:pb-20">
       <div class="mb-6">
-        <h1 class="text-2xl font-semibold">{{ messages.accountOrders.title }}</h1>
+        <h1 class="mk-h1">{{ messages.accountOrders.title }}</h1>
         <p class="mt-1 text-sm text-muted-foreground">{{ messages.accountOrders.description }}</p>
       </div>
 
@@ -57,7 +50,7 @@
         </section>
       </div>
     </section>
-  </main>
+  </StoreShell>
 </template>
 
 <script setup lang="ts">
@@ -67,8 +60,7 @@ import { toast } from "vue-sonner";
 import { usePageContext } from "vike-vue/usePageContext";
 
 import OrderList from "@/components/storefront/OrderList.vue";
-import PublicNav from "@/components/storefront/PublicNav.vue";
-import StorefrontBrand from "@/components/storefront/StorefrontBrand.vue";
+import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

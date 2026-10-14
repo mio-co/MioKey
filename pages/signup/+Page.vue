@@ -1,6 +1,5 @@
 <template>
-  <main class="relative flex min-h-screen items-center justify-center bg-muted/30 p-6">
-    <div class="absolute right-4 top-4"><StorefrontPreferences /></div>
+  <AuthShell>
     <Alert v-if="!rootInitialized" class="w-full max-w-md">
       <AlertTitle>{{ messages.auth.signup.unavailable }}</AlertTitle>
       <AlertDescription>{{ messages.auth.signup.notInitialized }}</AlertDescription>
@@ -55,7 +54,7 @@
         </CardFooter>
       </form>
     </Card>
-  </main>
+  </AuthShell>
 </template>
 
 <script lang="ts" setup>
@@ -70,7 +69,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import StorefrontPreferences from "@/components/storefront/StorefrontPreferences.vue";
+import AuthShell from "@/components/storefront/AuthShell.vue";
 import { authClient } from "@/lib/auth-client";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 

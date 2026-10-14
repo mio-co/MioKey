@@ -1,6 +1,5 @@
 <template>
-  <main class="relative flex min-h-screen items-center justify-center bg-muted/30 p-6">
-    <div class="absolute right-4 top-4"><StorefrontPreferences /></div>
+  <AuthShell>
     <Card class="w-full max-w-md">
       <CardHeader>
         <CardTitle>{{ messages.auth.forgotPassword.title }}</CardTitle>
@@ -23,7 +22,7 @@
         </CardFooter>
       </form>
     </Card>
-  </main>
+  </AuthShell>
 </template>
 
 <script lang="ts" setup>
@@ -35,7 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import StorefrontPreferences from "@/components/storefront/StorefrontPreferences.vue";
+import AuthShell from "@/components/storefront/AuthShell.vue";
 import { authClient } from "@/lib/auth-client";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 

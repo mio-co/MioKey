@@ -1,15 +1,8 @@
 <template>
-  <main class="min-h-screen bg-muted/30">
-    <header class="fixed inset-x-0 top-0 z-50 border-b bg-background/95 backdrop-blur">
-      <div class="mx-auto flex min-h-16 max-w-5xl items-center justify-between gap-4 px-5">
-        <StorefrontBrand />
-        <PublicNav />
-      </div>
-    </header>
-
-    <section class="mx-auto flex max-w-5xl flex-col gap-6 px-5 pb-12 pt-26">
+  <StoreShell tone="muted">
+    <section class="mx-auto flex max-w-5xl flex-col gap-6 px-5 pb-16 pt-8 sm:pt-12 lg:pb-20">
       <div>
-        <h1 class="text-2xl font-semibold tracking-normal">{{ messages.account.title }}</h1>
+        <h1 class="mk-h1">{{ messages.account.title }}</h1>
         <p class="mt-1 text-sm text-muted-foreground">{{ messages.account.description }}</p>
       </div>
 
@@ -175,7 +168,7 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  </main>
+  </StoreShell>
 </template>
 
 <script setup lang="ts">
@@ -186,8 +179,7 @@ import { Field as VeeField, Form as VeeForm, useForm } from "vee-validate";
 import { usePageContext } from "vike-vue/usePageContext";
 import { toast } from "vue-sonner";
 import { z } from "zod";
-import PublicNav from "@/components/storefront/PublicNav.vue";
-import StorefrontBrand from "@/components/storefront/StorefrontBrand.vue";
+import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
