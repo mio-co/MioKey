@@ -1,20 +1,20 @@
 <template>
-  <Sidebar variant="inset" collapsible="icon">
+  <Sidebar variant="inset" collapsible="icon" class="mk-admin-sidebar">
     <SidebarHeader>
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
-              <SidebarMenuButton size="lg" class="h-14 cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                <img :src="logoUrl" alt="MioKey Logo" class="aspect-square size-10 rounded-lg object-contain" />
+              <SidebarMenuButton size="lg" class="h-14 cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground" data-testid="admin-brand">
+                <img :src="logoUrl" alt="MioKey Logo" class="aspect-square size-9 shrink-0 rounded-xl object-contain" />
                 <div class="grid flex-1 text-left leading-tight">
-                  <span class="truncate text-sm font-semibold">MioKey</span>
-                  <span class="truncate text-xs">系统管理后台</span>
+                  <span class="mk-display truncate text-[15px]">MioKey</span>
+                  <span class="truncate text-xs text-muted-foreground">系统管理后台</span>
                 </div>
-                <ChevronsUpDownIcon class="ml-auto" />
+                <ChevronsUpDownIcon class="ml-auto opacity-60" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="start" :side-offset="8" class="w-64">
+            <DropdownMenuContent :side="isMobile ? 'bottom' : 'right'" align="start" :side-offset="8" class="w-64">
               <DropdownMenuLabel>关于 MioKey</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
@@ -36,100 +36,64 @@
       </SidebarMenu>
     </SidebarHeader>
 
-    <SidebarContent>
-      <SidebarGroup>
-        <SidebarGroupLabel>管理</SidebarGroupLabel>
+    <SidebarContent class="mk-no-scrollbar">
+      <SidebarGroup v-for="section in sections" :key="section.label">
+        <SidebarGroupLabel>{{ section.label }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton as-child :is-active="isItemActive(adminNavigation.dashboard)">
-                <a :href="basePath + adminNavigation.dashboard.path"><LayoutDashboardIcon /><span>{{ adminNavigation.dashboard.title }}</span></a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <template v-for="entry in section.entries" :key="entry.key">
+              <!-- Single page link -->
+              <SidebarMenuItem v-if="entry.kind === 'link'" :data-testid="`nav-${entry.key}`">
+                <SidebarMenuButton as-child :is-active="isActive(entry.path)" :tooltip="entry.title">
+                  <a :href="basePath + entry.path" :aria-current="isActive(entry.path) ? 'page' : undefined" @click="onNavClick(basePath + entry.path, $event)">
+                    <component :is="entry.icon" />
+                    <span>{{ entry.title }}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-            <SidebarMenuItem>
-              <Collapsible default-open class="group/collapsible">
-                <CollapsibleTrigger as-child>
-                  <SidebarMenuButton :is-active="isGroupActive(adminNavigation.product)">
-                    <PackageIcon />
-                    <span>{{ adminNavigation.product.title }}</span>
-                    <ChevronRightIcon class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem v-for="item in adminNavigation.product.items" :key="item.title">
-                      <SidebarMenuSubButton as-child :is-active="isItemActive(item)">
-                        <a :href="basePath + item.path"><span>{{ item.title }}</span></a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </CollapsibleContent>
+              <!-- Group, icon-collapsed desktop rail: flyout menu so the group still works without expanding the rail -->
+              <SidebarMenuItem v-else-if="railCollapsed" :data-testid="`nav-${entry.key}`">
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <SidebarMenuButton :is-active="isGroupActive(entry)" :tooltip="entry.title">
+                      <component :is="entry.icon" />
+                      <span>{{ entry.title }}</span>
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" :side-offset="10" class="min-w-48">
+                    <DropdownMenuLabel>{{ entry.title }}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem v-for="item in entry.items" :key="item.path" as-child>
+                      <a :href="basePath + item.path" :aria-current="isActive(item.path) ? 'page' : undefined" :class="isActive(item.path) ? 'font-semibold' : ''">{{ item.title }}</a>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+
+              <!-- Group, expanded: collapsible with remembered open state -->
+              <Collapsible v-else as-child :open="isGroupOpen(entry)" class="group/collapsible" @update:open="setGroupOpen(entry, $event)">
+                <SidebarMenuItem :data-testid="`nav-${entry.key}`">
+                  <CollapsibleTrigger as-child>
+                    <SidebarMenuButton :tooltip="entry.title" :data-group-active="isGroupActive(entry) || undefined" class="data-[group-active]:font-medium">
+                      <component :is="entry.icon" />
+                      <span>{{ entry.title }}</span>
+                      <span v-if="!isGroupOpen(entry) && isGroupActive(entry)" class="ml-auto size-1.5 shrink-0 rounded-full bg-foreground" aria-hidden="true" />
+                      <ChevronRightIcon :class="['shrink-0 opacity-60 transition-transform duration-300 ease-(--ease-out-expo) group-data-[state=open]/collapsible:rotate-90', !isGroupOpen(entry) && isGroupActive(entry) ? 'ml-1' : 'ml-auto']" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent class="mk-collapsible">
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem v-for="item in entry.items" :key="item.path">
+                        <SidebarMenuSubButton as-child :is-active="isActive(item.path)">
+                          <a :href="basePath + item.path" :aria-current="isActive(item.path) ? 'page' : undefined" @click="onNavClick(basePath + item.path, $event)"><span>{{ item.title }}</span></a>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
               </Collapsible>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <Collapsible default-open class="group/collapsible">
-                <CollapsibleTrigger as-child>
-                  <SidebarMenuButton :is-active="isGroupActive(adminNavigation.suppliers)"><KeyRoundIcon /><span>{{ adminNavigation.suppliers.title }}</span><ChevronRightIcon class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" /></SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent><SidebarMenuSub><SidebarMenuSubItem v-for="item in adminNavigation.suppliers.items" :key="item.title"><SidebarMenuSubButton as-child :is-active="isItemActive(item)"><a :href="basePath + item.path"><span>{{ item.title }}</span></a></SidebarMenuSubButton></SidebarMenuSubItem></SidebarMenuSub></CollapsibleContent>
-              </Collapsible>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton as-child :is-active="isItemActive(adminNavigation.orders)">
-                <a :href="basePath + adminNavigation.orders.path"><ClipboardListIcon /><span>{{ adminNavigation.orders.title }}</span></a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton as-child :is-active="isItemActive(adminNavigation.users)">
-                <a :href="basePath + adminNavigation.users.path"><UsersIcon /><span>{{ adminNavigation.users.title }}</span></a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <Collapsible default-open class="group/collapsible">
-                <CollapsibleTrigger as-child>
-                  <SidebarMenuButton :is-active="isGroupActive(adminNavigation.push)">
-                    <BellIcon />
-                    <span>{{ adminNavigation.push.title }}</span>
-                    <ChevronRightIcon class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem v-for="item in adminNavigation.push.items" :key="item.title">
-                      <SidebarMenuSubButton as-child :is-active="isItemActive(item)">
-                        <a :href="basePath + item.path"><span>{{ item.title }}</span></a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <Collapsible default-open class="group/collapsible">
-                <CollapsibleTrigger as-child>
-                  <SidebarMenuButton :is-active="isGroupActive(adminNavigation.system)">
-                    <SettingsIcon />
-                    <span>{{ adminNavigation.system.title }}</span>
-                    <ChevronRightIcon class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem v-for="item in adminNavigation.system.items" :key="item.title">
-                      <SidebarMenuSubButton as-child :is-active="isItemActive(item)">
-                        <a :href="basePath + item.path"><span>{{ item.title }}</span></a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  </SidebarMenuSub>
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarMenuItem>
+            </template>
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -140,29 +104,40 @@
         <SidebarMenuItem>
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
-              <SidebarMenuButton size="lg" class="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                <Avatar class="size-8 rounded-lg"><AvatarFallback class="rounded-lg">{{ userInitials }}</AvatarFallback></Avatar>
+              <SidebarMenuButton size="lg" class="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground" data-testid="admin-user-menu">
+                <Avatar class="size-8 rounded-full"><AvatarFallback class="rounded-full bg-foreground text-xs font-semibold text-background">{{ userInitials }}</AvatarFallback></Avatar>
                 <div class="grid flex-1 text-left text-sm leading-tight">
                   <span class="truncate font-medium">{{ currentUserName }}</span>
-                  <span class="truncate text-xs">{{ currentUserEmail }}</span>
+                  <span class="truncate text-xs text-muted-foreground">{{ currentUserEmail }}</span>
                 </div>
-                <ChevronUpIcon class="ml-auto" />
+                <ChevronsUpDownIcon class="ml-auto opacity-60" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="end" :side-offset="8" class="w-48">
-              <DropdownMenuLabel>{{ currentUserName }}</DropdownMenuLabel>
+            <DropdownMenuContent :side="isMobile ? 'top' : 'right'" align="end" :side-offset="8" class="w-56">
+              <DropdownMenuLabel class="grid leading-tight">
+                <span class="truncate">{{ currentUserName }}</span>
+                <span class="truncate text-xs font-normal text-muted-foreground">{{ currentUserEmail }}</span>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem as-child>
-                  <a :href="basePath + adminPages.account.path"><UserRoundCogIcon data-icon="inline-start" />账户设置</a>
+                  <a :href="basePath + adminPages.account.path" @click="onNavClick(basePath + adminPages.account.path, $event)"><UserRoundCogIcon data-icon="inline-start" />账户设置</a>
                 </DropdownMenuItem>
-                <DropdownMenuItem @select="onSignOut"><LogOutIcon data-icon="inline-start" />退出登录</DropdownMenuItem>
+                <DropdownMenuItem @select.prevent="toggleTheme">
+                  <component :is="theme === 'dark' ? SunIcon : MoonIcon" data-icon="inline-start" />{{ theme === "dark" ? "浅色模式" : "深色模式" }}
+                </DropdownMenuItem>
+                <DropdownMenuItem as-child>
+                  <a href="/" target="_blank" rel="noopener"><StoreIcon data-icon="inline-start" />查看店铺</a>
+                </DropdownMenuItem>
               </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem class="text-destructive focus:text-destructive" @select="onSignOut"><LogOutIcon data-icon="inline-start" />退出登录</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarFooter>
+    <SidebarRail />
   </Sidebar>
 </template>
 
@@ -170,7 +145,7 @@
 import { CollapsibleContent, CollapsibleRoot as Collapsible, CollapsibleTrigger } from "reka-ui";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarRail, useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -178,15 +153,46 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
-import { adminNavigation, adminPages, isAdminNavigationItemActive, type AdminNavigationGroup, type AdminNavigationItem } from "@/lib/admin-navigation";
-import { BellIcon, ChevronRightIcon, ChevronUpIcon, ChevronsUpDownIcon, ClipboardListIcon, ExternalLinkIcon, InfoIcon, KeyRoundIcon, LayoutDashboardIcon, LogOutIcon, PackageIcon, SettingsIcon, UserRoundCogIcon, UsersIcon } from "@lucide/vue";
+import { adminNavigation, adminPages, isAdminNavigationItemActive, type AdminNavigationItem } from "@/lib/admin-navigation";
+import { useStorefrontPreferences } from "@/lib/storefront-preferences";
+import { useDrawerHistory } from "@/lib/ui/drawer-history";
+import { BellIcon, ChevronRightIcon, ChevronsUpDownIcon, ClipboardListIcon, ExternalLinkIcon, InfoIcon, KeyRoundIcon, LayoutDashboardIcon, LogOutIcon, MoonIcon, PackageIcon, SettingsIcon, StoreIcon, SunIcon, UserRoundCogIcon, UsersIcon } from "@lucide/vue";
 import logoUrl from "@/assets/logo.svg?url";
 import { navigate } from "vike/client/router";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch, type Component } from "vue";
 import { usePageContext } from "vike-vue/usePageContext";
+
+type NavLink = { kind: "link"; key: string; title: string; path: string; icon: Component };
+type NavGroup = { kind: "group"; key: string; title: string; icon: Component; items: readonly { title: string; path: string }[] };
+type NavEntry = NavLink | NavGroup;
 
 const pageContext = usePageContext();
 const basePath = computed(() => `/${pageContext.routeParams.adminPath}`);
+const { isMobile, openMobile, setOpenMobile, state } = useSidebar();
+const { theme, setTheme } = useStorefrontPreferences();
+const railCollapsed = computed(() => state.value === "collapsed" && !isMobile.value);
+
+// Navigation is data-driven from lib/admin-navigation (unchanged); this only decides grouping and icons.
+const sections: { label: string; entries: NavEntry[] }[] = [
+  {
+    label: "运营",
+    entries: [
+      { kind: "link", key: "dashboard", title: adminNavigation.dashboard.title, path: adminNavigation.dashboard.path, icon: LayoutDashboardIcon },
+      { kind: "link", key: "orders", title: adminNavigation.orders.title, path: adminNavigation.orders.path, icon: ClipboardListIcon },
+      { kind: "group", key: "product", title: adminNavigation.product.title, icon: PackageIcon, items: adminNavigation.product.items },
+      { kind: "group", key: "suppliers", title: adminNavigation.suppliers.title, icon: KeyRoundIcon, items: adminNavigation.suppliers.items },
+      { kind: "link", key: "users", title: adminNavigation.users.title, path: adminNavigation.users.path, icon: UsersIcon },
+    ],
+  },
+  {
+    label: "设置",
+    entries: [
+      { kind: "group", key: "push", title: adminNavigation.push.title, icon: BellIcon, items: adminNavigation.push.items },
+      { kind: "group", key: "system", title: adminNavigation.system.title, icon: SettingsIcon, items: adminNavigation.system.items },
+    ],
+  },
+];
+
 const currentUser = computed(() => pageContext.user ?? null);
 const currentUserName = computed(() => currentUser.value?.name?.trim() || currentUser.value?.email || "管理员");
 const currentUserEmail = computed(() => currentUser.value?.email || "当前登录账号");
@@ -228,13 +234,49 @@ function compareVersions(current: string, latest: string) {
   return 0;
 }
 
-function isItemActive(item: AdminNavigationItem) {
-  return isAdminNavigationItemActive(pageContext.urlPathname, basePath.value, item);
+function isActive(path: string) {
+  return isAdminNavigationItemActive(pageContext.urlPathname, basePath.value, { path } as unknown as AdminNavigationItem);
 }
 
+function isGroupActive(group: NavGroup) {
+  return group.items.some((item) => isActive(item.path));
+}
 
-function isGroupActive(group: AdminNavigationGroup) {
-  return group.items.some((item) => isItemActive(item));
+// Collapsible groups: remember what the user opened/closed, always reveal the group of the current page.
+const NAV_STORAGE_KEY = "mk-admin-nav";
+const openGroups = ref<Record<string, boolean>>({});
+onMounted(() => {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(NAV_STORAGE_KEY) || "{}") as Record<string, boolean>;
+    if (saved && typeof saved === "object") openGroups.value = saved;
+  } catch { /* ignore broken storage */ }
+});
+function isGroupOpen(group: NavGroup) {
+  return openGroups.value[group.key] ?? isGroupActive(group);
+}
+function setGroupOpen(group: NavGroup, value: boolean) {
+  openGroups.value = { ...openGroups.value, [group.key]: value };
+  try { window.localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify(openGroups.value)); } catch { /* storage full or disabled */ }
+}
+watch(() => pageContext.urlPathname, () => {
+  for (const section of sections) for (const entry of section.entries) {
+    if (entry.kind === "group" && isGroupActive(entry) && openGroups.value[entry.key] === false) setGroupOpen(entry, true);
+  }
+});
+
+// Phone drawer (mail admin-sidebar pattern): back button closes it, tapping an item closes it and then navigates.
+const { navigateFromDrawer } = useDrawerHistory(openMobile, setOpenMobile, isMobile);
+function onNavClick(href: string, event: MouseEvent) {
+  if (!isMobile.value || !openMobile.value) return;
+  navigateFromDrawer(href, event);
+}
+// Safety net: any navigation (command menu, in-page links, history) closes the phone drawer.
+watch(() => pageContext.urlPathname, () => {
+  if (openMobile.value) setOpenMobile(false);
+});
+
+function toggleTheme() {
+  setTheme(theme.value === "dark" ? "light" : "dark");
 }
 
 async function onSignOut() {
