@@ -51,7 +51,7 @@
       </CardContent>
     </Card>
 
-    <AdminDataTable :columns="columns" :rows="data.items" row-key="id" empty-text="暂无媒体文件。">
+    <AdminDataTable :loading="loading" :columns="columns" :rows="data.items" row-key="id" empty-text="暂无媒体文件。">
       <template #toolbar><div class="flex flex-wrap items-center gap-2"><Input v-model="draftKeyword" class="h-8 w-56 shrink-0" placeholder="搜索文件名" @keyup.enter="search" /><Select v-model="draftMimeType"><SelectTrigger size="sm" class="w-40 shrink-0"><SelectValue placeholder="全部类型" /></SelectTrigger><SelectContent><SelectItem value="all">全部类型</SelectItem><SelectItem value="image/">图片</SelectItem><SelectItem value="application/pdf">PDF</SelectItem></SelectContent></Select><Button size="sm" @click="search">查询</Button><Button variant="outline" size="sm" @click="resetFilters">重置</Button></div></template>
       <template #cell-preview="{ row }"><Button variant="ghost" size="sm" @click="preview = row">预览</Button></template>
       <template #cell-originalName="{ row }"><span class="block max-w-64 truncate">{{ row.originalName }}</span></template>

@@ -6,7 +6,7 @@
       <Card v-for="metric in metrics" :key="metric.label" class="gap-0">
         <CardHeader class="pb-0">
           <CardDescription>{{ metric.label }}</CardDescription>
-          <CardTitle class="text-2xl font-semibold tabular-nums">{{ metric.value }}</CardTitle>
+          <CardTitle class="mk-display pt-1 text-[28px] leading-none tabular-nums">{{ metric.value }}</CardTitle>
         </CardHeader>
         <CardFooter class="pt-1.5 text-sm text-muted-foreground">{{ metric.description }}</CardFooter>
       </Card>
@@ -32,7 +32,7 @@
         </ButtonGroup>
       </CardHeader>
       <CardContent>
-        <ChartContainer :config="chartConfig" class="h-80 min-h-65 w-full sm:h-95">
+        <ChartContainer id="dashboard-trend" :config="chartConfig" class="h-80 min-h-65 w-full sm:h-95">
           <VisXYContainer :data="visibleTrend" :margin="{ left: 8, right: 8, top: 12, bottom: 8 }">
             <VisArea
               :x="xAccessor"
@@ -120,8 +120,8 @@ const rangeOptions: Array<{ days: DashboardTrendRange; label: string }> = [
   { days: 7, label: "最近 7 天" },
 ];
 const chartConfig = {
-  createdOrders: { label: "新建订单", color: "#2563eb" },
-  paidOrders: { label: "已支付订单", color: "#f97316" },
+  createdOrders: { label: "新建订单", color: "#8a8a8a" },
+  paidOrders: { label: "已支付订单", color: "#f2734f" },
 } satisfies ChartConfig;
 const xAccessor = (point: DashboardOrderTrendPoint) => point.timestamp;
 const createdOrdersAccessor = (point: DashboardOrderTrendPoint) => point.createdOrders;

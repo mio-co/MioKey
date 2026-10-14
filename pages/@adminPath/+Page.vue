@@ -1,6 +1,11 @@
 <template>
-  <main class="flex min-h-screen items-center justify-center bg-muted/30 p-6">
-    <Card class="w-full max-w-md">
+  <AuthShell>
+    <template #aside>
+      <p class="mk-eyebrow text-background/60">MioKey 管理后台</p>
+      <p class="mt-5 font-display text-[clamp(32px,3.4vw,52px)] font-semibold leading-[1.1] tracking-[-0.02em]">订单、商品与卡密，<br />一个地方管好。</p>
+      <p class="mt-6 max-w-sm text-base leading-7 text-background/70">仅限管理员账号登录。登录后可按 ⌘/Ctrl + K 快速跳转到任意页面。</p>
+    </template>
+    <Card class="w-full">
       <CardHeader class="space-y-1 pb-6">
         <CardTitle>后台登录</CardTitle>
         <CardDescription>使用管理员邮箱和密码登录。</CardDescription>
@@ -26,10 +31,11 @@
         </CardFooter>
       </form>
     </Card>
-  </main>
+  </AuthShell>
 </template>
 
 <script lang="ts" setup>
+import AuthShell from "@/components/storefront/AuthShell.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

@@ -7,7 +7,7 @@
       <AlertDescription>{{ loadError }}</AlertDescription>
     </Alert>
 
-    <AdminDataTable :columns="columns" :rows="paginatedCategories" row-key="id">
+    <AdminDataTable :loading="loading" :columns="columns" :rows="paginatedCategories" row-key="id">
       <template #toolbar>
         <div class="flex flex-wrap items-center gap-2">
           <Input v-model="draftQuery" class="h-8 w-60" placeholder="搜索分类名称或 Slug" @keyup.enter="search" />

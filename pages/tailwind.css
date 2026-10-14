@@ -272,3 +272,124 @@
   h1, h2, h3, h4 { font-family: var(--font-display); }
   ::selection { background: color-mix(in oklab, var(--foreground) 85%, transparent); color: var(--background); }
 }
+
+/* ───────────── Overlays (dialogs, sheets, menus) — shared enter/exit motion ─────────────
+   The shadcn classes reference tw-animate utilities that are not installed, so overlays used to pop in/out.
+   Reka's Presence waits for these animations before unmounting. */
+@keyframes mk-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mk-overlay-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes mk-pop-in { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes mk-pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(6px) scale(0.98); } }
+@keyframes mk-menu-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes mk-sheet-left { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes mk-sheet-left-out { from { transform: none; } to { transform: translateX(-100%); } }
+@keyframes mk-sheet-right { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes mk-sheet-right-out { from { transform: none; } to { transform: translateX(100%); } }
+@keyframes mk-collapse-down { from { height: 0; opacity: 0; } to { height: var(--reka-collapsible-content-height); opacity: 1; } }
+@keyframes mk-collapse-up { from { height: var(--reka-collapsible-content-height); opacity: 1; } to { height: 0; opacity: 0; } }
+@keyframes mk-progress { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@keyframes mk-page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+:is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"], [data-slot="sheet-overlay"]) { background: rgb(10 10 10 / 0.42); backdrop-filter: blur(2px); }
+:is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"], [data-slot="sheet-overlay"])[data-state="open"] { animation: mk-overlay-in 0.2s ease both; }
+:is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"], [data-slot="sheet-overlay"])[data-state="closed"] { animation: mk-overlay-out 0.16s ease both; }
+:is([data-slot="dialog-content"], [data-slot="alert-dialog-content"])[data-state="open"] { animation: mk-pop-in 0.32s var(--ease-out-expo) both; }
+:is([data-slot="dialog-content"], [data-slot="alert-dialog-content"])[data-state="closed"] { animation: mk-pop-out 0.15s ease both; }
+.mk-command[data-slot="dialog-content"][data-state] { animation-name: mk-overlay-in; }
+.mk-command[data-slot="dialog-content"][data-state="closed"] { animation-name: mk-overlay-out; }
+:is([data-slot="dropdown-menu-content"], [data-slot="context-menu-content"], [data-slot="popover-content"], [data-slot="select-content"], [data-slot="dropdown-menu-sub-content"])[data-state="open"] { transform-origin: var(--reka-popper-transform-origin); animation: mk-menu-in 0.18s var(--ease-out-expo) both; }
+[data-slot="sheet-content"][data-side="left"][data-state="open"] { animation: mk-sheet-left 0.42s var(--ease-out-expo) both; }
+[data-slot="sheet-content"][data-side="left"][data-state="closed"] { animation: mk-sheet-left-out 0.24s var(--ease-drawer) both; }
+[data-slot="sheet-content"][data-side="right"][data-state="open"] { animation: mk-sheet-right 0.42s var(--ease-out-expo) both; }
+[data-slot="sheet-content"][data-side="right"][data-state="closed"] { animation: mk-sheet-right-out 0.24s var(--ease-drawer) both; }
+.mk-collapsible { overflow: hidden; }
+.mk-collapsible[data-state="open"] { animation: mk-collapse-down 0.28s var(--ease-out-expo); }
+.mk-collapsible[data-state="closed"] { animation: mk-collapse-up 0.2s ease; }
+
+/* ───────────── Admin (.mk-admin) — same MioKey language, denser than the storefront ───────────── */
+.mk-admin { --radius: 0.875rem; }
+.mk-admin, body:has(.mk-admin) { font-feature-settings: "tnum" 0; }
+.mk-kbd { display: inline-flex; min-width: 1.25rem; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 6px; background: var(--background); padding: 0 0.3rem; font-family: var(--font-sans); font-size: 11px; line-height: 1.25rem; color: var(--muted-foreground); }
+.mk-kbd + .mk-kbd { margin-left: 2px; }
+.mk-admin-main { animation: mk-page-in 0.32s var(--ease-out-expo) both; }
+.mk-fade-enter-active, .mk-fade-leave-active { transition: opacity 0.25s ease, transform 0.35s var(--ease-out-expo); }
+.mk-fade-enter-from, .mk-fade-leave-to { opacity: 0; transform: translateY(8px); }
+
+/* Sidebar (desktop rail and phone sheet share data-sidebar attributes; the sheet is portalled outside .mk-admin). */
+[data-sidebar="sidebar"] [data-sidebar="group-label"] { font-family: var(--font-display); font-weight: 500; letter-spacing: 0; }
+[data-sidebar="sidebar"] [data-sidebar="menu-button"] { border-radius: 10px; transition: background-color 0.2s ease, color 0.2s ease, width 0.2s, height 0.2s, padding 0.2s; }
+[data-sidebar="sidebar"] [data-sidebar="menu-button"][data-active="true"] { background: var(--foreground); color: var(--background); font-weight: 600; }
+[data-sidebar="sidebar"] [data-sidebar="menu-sub"] { border-color: color-mix(in oklab, var(--sidebar-border) 70%, transparent); }
+[data-sidebar="sidebar"] [data-sidebar="menu-sub-button"] { border-radius: 8px; color: color-mix(in oklab, var(--sidebar-foreground) 78%, transparent); }
+[data-sidebar="sidebar"] [data-sidebar="menu-sub-button"]:hover { color: var(--sidebar-foreground); }
+[data-sidebar="sidebar"] [data-sidebar="menu-sub-button"][data-active="true"] { position: relative; background: var(--sidebar-accent); color: var(--sidebar-foreground); font-weight: 600; }
+[data-sidebar="sidebar"] [data-sidebar="menu-sub-button"][data-active="true"]::before { content: ""; position: absolute; left: -11px; top: 22%; bottom: 22%; width: 2px; border-radius: 2px; background: var(--foreground); }
+/* Phone sheet: 44px touch targets. */
+[data-mobile="true"][data-sidebar="sidebar"] [data-sidebar="menu-button"]:not([data-size="lg"]) { height: 2.75rem; font-size: 0.9375rem; }
+[data-mobile="true"][data-sidebar="sidebar"] [data-sidebar="menu-sub-button"] { height: 2.5rem; font-size: 0.9375rem; }
+[data-mobile="true"][data-sidebar="sidebar"] { box-shadow: 0 24px 64px -12px rgb(0 0 0 / 0.35); }
+
+@layer components {
+  .mk-admin [data-slot="card"] { border-radius: 18px; border-color: color-mix(in oklab, var(--border) 90%, transparent); box-shadow: none; }
+  .mk-admin [data-slot="card-title"] { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.005em; }
+  .mk-admin [data-slot="button"] { font-weight: 500; }
+  .mk-admin [data-slot="badge"] { border-radius: 9999px; font-weight: 500; }
+  .mk-admin [data-slot="alert"] { border-radius: 14px; }
+  .mk-admin [data-slot="tabs-list"] { border-radius: 12px; }
+  body:has(.mk-admin) :is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) { border-radius: 20px; }
+  body:has(.mk-admin) :is([data-slot="dialog-title"], [data-slot="alert-dialog-title"], [data-slot="sheet-title"]) { font-family: var(--font-display); font-weight: 600; }
+  body:has(.mk-admin) :is([data-slot="dropdown-menu-content"], [data-slot="context-menu-content"], [data-slot="popover-content"], [data-slot="select-content"]) { border-radius: 12px; }
+  /* Phones: 44px fields and buttons inside admin pages and dialogs. */
+  @media (max-width: 767.98px) {
+    :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="input"]:not([type="checkbox"]):not([type="file"]), [data-slot="select-trigger"]) { min-height: 2.75rem; font-size: 16px; }
+    :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) [data-slot="button"]:not([data-size^="icon"]) { min-height: 2.5rem; }
+    body:has(.mk-admin) [data-slot="dialog-content"] { max-height: calc(100dvh - 2rem); overflow-y: auto; }
+  }
+}
+
+/* Admin tables: quiet header, comfortable rows, phone card layout. */
+.mk-table-frame thead [data-slot="table-head"] { height: 2.75rem; background: color-mix(in oklab, var(--muted) 55%, transparent); color: var(--muted-foreground); font-size: 12.5px; font-weight: 500; }
+.mk-table-frame thead [data-slot="table-head"]:first-child { padding-left: 1rem; }
+.mk-table-frame tbody [data-slot="table-cell"]:first-child { padding-left: 1rem; }
+.mk-table-frame :is([data-slot="table-head"], [data-slot="table-cell"]):last-child { padding-right: 1rem; }
+.mk-table-frame tbody > tr:last-child { border-bottom: 0; }
+.mk-table-frame tbody [data-slot="table-cell"] { padding-block: 0.7rem; }
+.mk-progress span { position: absolute; inset: 0; width: 40%; background: var(--foreground); animation: mk-progress 1.1s var(--ease-drawer) infinite; }
+.mk-row-menu [data-slot="button"] { width: 100%; justify-content: flex-start; }
+@media (max-width: 767.98px) {
+  .mk-table-stack .mk-table-frame { overflow: visible; border: 0; background: transparent; }
+  .mk-table-stack .mk-table-frame [data-slot="table-container"] { overflow: visible; }
+  .mk-table-stack .mk-table-frame table, .mk-table-stack .mk-table-frame tbody { display: block; width: 100%; }
+  .mk-table-stack .mk-table-frame thead { display: none; }
+  .mk-table-stack .mk-table-frame tbody > tr { display: block; margin-bottom: 0.75rem; border: 1px solid var(--border); border-radius: 18px; background: var(--card); padding: 0.5rem 1rem; }
+  .mk-table-stack .mk-table-frame tbody > tr:last-child { border-bottom: 1px solid var(--border); margin-bottom: 0; }
+  .mk-table-stack .mk-table-frame tbody > tr:hover { background: var(--card); }
+  .mk-table-stack .mk-table-frame tbody [data-slot="table-cell"] { display: flex; width: auto; max-width: none; min-height: 2.5rem; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px dashed color-mix(in oklab, var(--border) 80%, transparent); white-space: normal; text-align: right; overflow-wrap: anywhere; }
+  .mk-table-stack .mk-table-frame tbody [data-slot="table-cell"]:first-child { padding-left: 0; }
+  .mk-table-stack .mk-table-frame tbody [data-slot="table-cell"]:last-child { padding-right: 0; border-bottom: 0; }
+  .mk-table-stack .mk-table-frame tbody [data-slot="table-cell"][data-label]::before { content: attr(data-label); flex-shrink: 0; max-width: 40%; text-align: left; font-family: var(--font-sans); font-size: 12.5px; font-weight: 400; letter-spacing: 0; color: var(--muted-foreground); }
+  .mk-table-stack .mk-table-frame tbody [data-slot="table-cell"] > * { min-width: 0; }
+  .mk-table-stack .mk-table-frame tbody [data-slot="table-cell"] :is(.truncate, [class*="max-w-"]) { max-width: 100%; }
+  .mk-table-stack .mk-table-frame tbody .mk-actions-cell { flex-wrap: wrap; justify-content: flex-end; gap: 0.25rem; padding-top: 0.6rem; }
+  .mk-table-stack .mk-table-frame tbody .mk-empty-row { padding: 0; }
+  .mk-table-stack .mk-table-frame tbody .mk-empty-row [data-slot="table-cell"] { justify-content: center; border: 0; }
+  .mk-table-stack .mk-table-frame tbody .mk-skeleton-row [data-slot="table-cell"] > [data-slot="skeleton"] { width: 45% !important; }
+  .mk-table-toolbar > * { flex-wrap: wrap; }
+  .mk-table-toolbar [data-slot="input"] { width: 100%; flex: 1 1 100%; }
+  .mk-table-pagination { overflow-x: auto; }
+}
+
+/* Toasts (vue-sonner) — MioKey type and radius everywhere. */
+[data-sonner-toaster] { --border-radius: 14px; font-family: var(--font-sans); }
+[data-sonner-toast] { box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.25) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-admin-main, .mk-collapsible[data-state], .mk-progress span,
+  :is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"], [data-slot="sheet-overlay"], [data-slot="dialog-content"], [data-slot="alert-dialog-content"], [data-slot="sheet-content"], [data-slot="dropdown-menu-content"], [data-slot="context-menu-content"], [data-slot="popover-content"], [data-slot="select-content"])[data-state] { animation-duration: 1ms !important; }
+}
+
+/* Touch: small toggles keep their look but get a 44px hit area (WCAG 2.5.8 / ui-ux-pro-max touch targets). */
+@media (pointer: coarse) {
+  :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="switch"], [data-slot="checkbox"], [data-slot="radio-group-item"]) { position: relative; }
+  :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="switch"], [data-slot="checkbox"], [data-slot="radio-group-item"])::after { content: ""; position: absolute; inset: -12px; }
+}

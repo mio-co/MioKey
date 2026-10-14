@@ -4,7 +4,7 @@
 
     <Alert v-if="error" variant="destructive"><AlertTitle>操作未完成</AlertTitle><AlertDescription>{{ error }}</AlertDescription></Alert>
 
-    <AdminDataTable :columns="columns" :rows="paginatedDiscounts" row-key="id">
+    <AdminDataTable :loading="loading" :columns="columns" :rows="paginatedDiscounts" row-key="id">
       <template #toolbar>
         <div class="flex flex-wrap items-center gap-2">
           <Input v-model="draftQuery" class="h-8 w-60" placeholder="搜索优惠券" @keyup.enter="search" />

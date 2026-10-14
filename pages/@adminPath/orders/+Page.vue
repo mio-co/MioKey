@@ -3,7 +3,7 @@
     <AdminPageHeader />
 
 
-    <AdminDataTable :columns="columns" :rows="orders" row-key="id" empty-text="没有符合条件的订单。">
+    <AdminDataTable :loading="loading" :columns="columns" :rows="orders" row-key="id" empty-text="没有符合条件的订单。">
       <template #toolbar>
         <div class="flex flex-wrap items-center gap-2">
           <Input v-model="filters.query" class="h-8 w-56" placeholder="按订单号搜索" @keyup.enter="resetAndLoad" />

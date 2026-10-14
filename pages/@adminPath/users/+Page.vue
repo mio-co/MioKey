@@ -2,7 +2,7 @@
   <section class="flex w-full flex-col gap-6">
     <AdminPageHeader />
 
-    <AdminDataTable :columns="columns" :rows="users" row-key="id" empty-text="没有符合条件的用户。">
+    <AdminDataTable :loading="loading" :columns="columns" :rows="users" row-key="id" empty-text="没有符合条件的用户。">
       <template #toolbar>
         <div class="flex flex-wrap items-center gap-2">
           <Input v-model="query" class="h-8 w-64" placeholder="昵称或邮箱" @keyup.enter="search" />

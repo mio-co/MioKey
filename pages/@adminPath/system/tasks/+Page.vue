@@ -3,7 +3,7 @@
     <AdminPageHeader />
     <Alert v-if="error" variant="destructive"><AlertTitle>无法读取任务日志</AlertTitle><AlertDescription>{{ error }}</AlertDescription></Alert>
     <!-- <p class="text-sm text-muted-foreground">这里只记录 Cron 异常；正常和空闲运行不会写入 D1。系统最多保留最近 1,000 条异常记录。</p> -->
-    <AdminDataTable :columns="columns" :rows="runs" row-key="id" :show-actions="false" empty-text="尚未记录 Cron 异常。">
+    <AdminDataTable :loading="loading" :columns="columns" :rows="runs" row-key="id" :show-actions="false" empty-text="尚未记录 Cron 异常。">
       <template #toolbar>
         <div class="flex w-full justify-end gap-2">
           <Button variant="outline" size="sm" class="border-destructive/30 text-destructive hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive" :disabled="loading || clearing || total === 0" @click="clearDialogOpen = true"><Trash2Icon />清空日志</Button>

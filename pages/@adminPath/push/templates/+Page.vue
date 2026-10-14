@@ -2,8 +2,8 @@
   <section class="grid gap-6">
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h2 class="text-xl font-semibold tracking-normal">消息模板</h2>
-        <p class="mt-1 text-sm text-muted-foreground">订单事件会使用对应场景的纯文本模板发送到已启用的消息通道。编辑前可先查看触发时机和可用变量。</p>
+        <h1 class="mk-display text-[22px] leading-tight sm:text-[26px]">消息模板</h1>
+        <p class="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">订单事件会使用对应场景的纯文本模板发送到已启用的消息通道。编辑前可先查看触发时机和可用变量。</p>
       </div>
       <Button variant="outline" size="sm" :disabled="loading" aria-label="刷新" title="刷新" @click="loadTemplates"><RefreshCwIcon :class="loading ? 'animate-spin' : ''" />刷新</Button>
     </div>

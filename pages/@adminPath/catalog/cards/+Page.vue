@@ -256,7 +256,7 @@ function formatDate(value: Date) {
         </div>
       </CardHeader>
       <CardContent class="pt-6">
-        <AdminDataTable :columns="columns" :rows="data.items" row-key="id" empty-text="暂无符合条件的卡密。">
+        <AdminDataTable :loading="loading" :columns="columns" :rows="data.items" row-key="id" empty-text="暂无符合条件的卡密。">
           <template #cell-productName="{ value }"><span class="font-medium">{{ value }}</span></template>
           <template #cell-contentPreview="{ value }"><span class="font-mono text-xs">{{ value }}</span></template>
           <template #cell-batchNo="{ value }">{{ value || "-" }}</template>

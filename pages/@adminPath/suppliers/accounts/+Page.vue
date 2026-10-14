@@ -2,7 +2,7 @@
   <section class="flex w-full flex-col gap-6">
     <AdminPageHeader />
     <div class="flex items-center justify-between gap-2"><Input v-model="search" class="h-9 w-72" placeholder="搜索账号或 API 来源" @keyup.enter="searchAccounts" /><div class="flex gap-2"><Button variant="outline" :disabled="loading" @click="load">刷新</Button><Button @click="openCreate">添加账号</Button></div></div>
-    <AdminDataTable :columns="columns" :rows="data.items" row-key="id" empty-text="暂无供应商账号。">
+    <AdminDataTable :loading="loading" :columns="columns" :rows="data.items" row-key="id" empty-text="暂无供应商账号。">
       <template #cell-enabled="{ row }"><Switch :model-value="row.enabled" :disabled="loading" @update:model-value="setEnabled(row, $event)" /></template>
       <template #cell-provider="{ row }">{{ providerLabel(row.provider, row.protocolVersion) }}</template>
       <template #cell-balanceMinor="{ row }">{{ row.balanceMinor === null ? "未同步" : `${availableBalance(row)} ${row.currency}` }}</template>
@@ -15,6 +15,7 @@
   </section>
 </template>
 <script setup lang="ts">
+import { confirmAction } from "@/lib/ui/admin-confirm";
 import { onMounted, reactive, ref } from "vue";
 import AdminDataTable, { type AdminTableColumn } from "@/components/admin/AdminDataTable.vue";
 import AdminPageHeader from "@/components/admin/AdminPageHeader.vue";
@@ -32,7 +33,7 @@ function openCreate() { editing.value = false; Object.assign(form, { id: undefin
 function openEdit(row: Account) { editing.value = true; Object.assign(form, { id: row.id, provider: row.provider, protocolVersion: row.protocolVersion === "3.5.5-v4" ? "acg_v3.1.2_plus" : row.protocolVersion, name: row.name, baseUrl: row.baseUrl, credentialsConfigured: row.credentialsConfigured, currency: row.currency, currencyDecimals: row.currencyDecimals }); dialogOpen.value = true; }
 async function save() { const credentials = form.provider === "acg" ? (form.apiId.trim() || form.appKey ? { apiId: form.apiId.trim(), appKey: form.appKey } : undefined) : (form.apiKey.trim() || form.apiSecret ? { apiKey: form.apiKey.trim(), apiSecret: form.apiSecret } : undefined); if (!editing.value && !credentials) return; if (credentials && ((form.provider === "acg" && (!form.apiId.trim() || !form.appKey)) || (form.provider === "dujiao_next" && (!form.apiKey.trim() || !form.apiSecret)))) return; saving.value = true; try { if (editing.value) await runTelefunc(() => onSaveSupplierAccount({ id: form.id!, name: form.name, baseUrl: form.baseUrl, currency: form.currency, currencyDecimals: form.currencyDecimals, ...(credentials ? { credentials } : {}) }), { successMessage: "供应商账号已更新。" }); else await runTelefunc(() => onSaveSupplierAccount({ provider: form.provider, protocolVersion: form.provider === "dujiao_next" ? "dujiao_next_v1" : form.protocolVersion, name: form.name, baseUrl: form.baseUrl, currency: form.currency, currencyDecimals: form.currencyDecimals, reserveBalanceMinor: form.reserveBalanceMinor, lowBalanceMinor: form.lowBalanceMinor, maxOrderCostMinor: form.maxOrderCostMinor, enabled: form.enabled, credentials }), { successMessage: "供应商账号已保存。" }); dialogOpen.value = false; await load(); } finally { saving.value = false; } }
 async function setEnabled(row: Account, enabled: boolean) { await runTelefunc(() => onSetSupplierAccountEnabled({ id: row.id, enabled }), { successMessage: enabled ? "账号已启用。" : "账号已停用。" }); await load(); }
-async function remove(row: Account) { if (!confirm(`确认删除供应商账号“${row.name}”？`)) return; await runTelefunc(() => onDeleteSupplierAccount({ id: row.id }), { successMessage: "供应商账号已删除或停用。" }); await load(); }
+async function remove(row: Account) { if (!(await confirmAction({ title: `确认删除供应商账号“${row.name}”？`, description: "删除后无法恢复；已绑定商品或有采购记录的账号会改为停用。", confirmText: "删除", destructive: true }))) return; await runTelefunc(() => onDeleteSupplierAccount({ id: row.id }), { successMessage: "供应商账号已删除或停用。" }); await load(); }
 async function test(row: Account) { testingId.value = row.id; try { await runTelefunc(() => onTestSupplierAccount({ id: row.id }), { successMessage: "连接测试成功。" }); await load(); } finally { testingId.value = null; } }
 function providerLabel(provider: Account["provider"], version: Account["protocolVersion"]) { return provider === "acg" ? `二次元 / ACG（${version === "acg_v3.1.1" ? "V3.1.1 之前旧版" : "V3.1.2+ 新版"}）` : "独角数卡 Next"; } function availableBalance(row: Account) { const balance = row.balanceMinor && /^(0|[1-9]\d*)$/.test(row.balanceMinor) ? BigInt(row.balanceMinor) : 0n; const reserved = /^(0|[1-9]\d*)$/.test(row.reserveBalanceMinor) ? BigInt(row.reserveBalanceMinor) : 0n; return formatMinorAmount((balance > reserved ? balance - reserved : 0n).toString(), row.currencyDecimals); } function healthLabel(value: Account["healthStatus"]) { return { unknown: "未测试", healthy: "健康", degraded: "异常", unavailable: "不可用" }[value]; }
 </script>

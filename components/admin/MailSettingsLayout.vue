@@ -21,18 +21,18 @@ function isActive(path: string) {
 <template>
   <section class="flex w-full flex-col gap-6">
     <div>
-      <h1 class="text-2xl font-semibold tracking-normal">{{ page?.pageTitle }}</h1>
-      <p v-if="page?.description" class="mt-1 text-sm text-muted-foreground">{{ page.description }}</p>
+      <h1 class="mk-display text-[22px] leading-tight sm:text-[26px]">{{ page?.pageTitle }}</h1>
+      <p v-if="page?.description" class="mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground">{{ page.description }}</p>
     </div>
 
-    <div class="grid gap-8 border-t pt-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
-      <nav class="flex gap-1 overflow-x-auto lg:flex-col" aria-label="邮件配置">
+    <div class="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10">
+      <nav class="mk-subnav mk-no-scrollbar flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:self-start" aria-label="邮件配置">
         <a
           v-for="item in items"
           :key="item.path"
           :href="basePath + item.path"
-          class="shrink-0 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted"
-          :class="isActive(item.path) ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground'"
+          class="shrink-0 rounded-full px-4 py-2 text-sm transition-colors hover:bg-muted lg:rounded-xl"
+          :class="isActive(item.path) ? 'bg-foreground font-medium text-background hover:bg-foreground' : 'text-muted-foreground'"
           :aria-current="isActive(item.path) ? 'page' : undefined"
         >
           {{ item.title }}

@@ -2,7 +2,7 @@
   <section class="flex w-full flex-col gap-6">
     <AdminPageHeader />
     <Alert v-if="error" variant="destructive"><AlertTitle>无法读取发送日志</AlertTitle><AlertDescription>{{ error }}</AlertDescription></Alert>
-    <AdminDataTable :columns="columns" :rows="logs" row-key="id" empty-text="没有符合条件的推送记录。">
+    <AdminDataTable :loading="loading" :columns="columns" :rows="logs" row-key="id" empty-text="没有符合条件的推送记录。">
       <template #toolbar>
         <div class="flex flex-1 flex-wrap items-center gap-3">
           <Input v-model="orderNo" class="h-8 w-52 shrink-0" placeholder="订单号" @keyup.enter="search" />
