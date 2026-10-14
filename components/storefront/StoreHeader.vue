@@ -29,8 +29,8 @@ const searchOpen = ref(false);
 const categoryMenuOpen = ref(false);
 // Pages without the catalogue in their data (order lookup, account…) fetch the category list when the menu opens.
 const { categories: menuCategories, totalCount: menuTotal, ensure: ensureCategories } = useNavCategories(() => props.categories, () => props.productTotal);
-// Drawer second level under "All products"; starts open when the visitor is browsing the catalogue.
-const menuCategoriesOpen = ref(false);
+// Drawer second level under "All products"; open by default, the chevron folds it away.
+const menuCategoriesOpen = ref(true);
 const drawerCategories = computed(() => [
   { id: null as number | null, name: messages.value.storefront.all, count: menuTotal.value ?? undefined },
   ...menuCategories.value.map((item) => ({ id: item.id as number | null, name: item.name, count: item.count })),
@@ -38,7 +38,6 @@ const drawerCategories = computed(() => [
 watch(menuOpen, (value) => {
   if (!value) return;
   void ensureCategories();
-  menuCategoriesOpen.value = currentCategory.value !== null || pathname.value.startsWith("/product/");
 });
 const query = ref("");
 const { navigateFromDrawer: navigateFromMenu } = useDrawerHistory(menuOpen, (value) => { menuOpen.value = value; });
@@ -211,11 +210,10 @@ const locales: { key: StorefrontLocale; label: string }[] = [
                     <a
                       :href="category.id === null ? '/#products' : `/?category=${category.id}#products`"
                       :aria-current="pathname === '/' && currentCategory === (category.id === null ? null : String(category.id)) ? 'page' : undefined"
-                      class="flex min-h-11 items-center justify-between rounded-xl pl-4 pr-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-foreground"
+                      class="mk-display relative flex items-center justify-between border-t py-3.5 pl-5 text-[17px] text-foreground/75 transition-colors hover:text-foreground before:absolute before:left-1 before:top-1/2 before:size-1.5 before:-translate-y-1/2 before:rounded-full before:bg-transparent aria-[current=page]:text-foreground aria-[current=page]:before:bg-foreground"
                       @click="navigateFromMenu(category.id === null ? '/#products' : `/?category=${category.id}#products`, $event)"
-                    >{{ category.name }}<span v-if="category.count != null" class="text-xs tabular-nums opacity-70">{{ category.count }}</span></a>
+                    >{{ category.name }}<span v-if="category.count != null" class="text-sm font-normal tabular-nums text-muted-foreground">{{ category.count }}</span></a>
                   </li>
-                  <li aria-hidden="true" class="h-3" />
                 </ul>
               </div>
             </div>
