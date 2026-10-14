@@ -22,7 +22,7 @@ export const smtpEmailConfig = {
   secure: true,
   username: "orders@example.com",
   password: "smtp-authorization-code",
-  from: "CFFK <orders@example.com>",
+  from: "MioKey <orders@example.com>",
 } satisfies EmailProviderConfig;
 
 export const deliverySuccessTemplate = {

@@ -1,11 +1,11 @@
-# CFFK SEO 设计方案
+# MioKey SEO 设计方案
 
 > 本文只覆盖两个阶段：
 >
 > - 第一阶段：全局站点元数据、页面级 title/description、favicon，以及高效的 Worker 缓存方案
 > - 第二阶段：Open Graph、Twitter Card、canonical 等 SEO 标签完善
 >
-> 本方案以当前 `cffk` 的 Vike + Vue + Cloudflare Workers + D1 架构为基础，不引入 KV，也不做整页 HTML 缓存。
+> 本方案以当前 `MioKey` 的 Vike + Vue + Cloudflare Workers + D1 架构为基础，不引入 KV，也不做整页 HTML 缓存。
 
 ## 1. 设计目标
 
@@ -59,11 +59,11 @@
 
 ### 2.1 Vike 配置
 
-当前 `cffk/pages/+config.ts` 只有静态默认值：
+当前 `pages/+config.ts` 只有静态默认值：
 
 ```ts
 const config: Config = {
-  title: "CFFK发卡",
+  title: "MioKey",
   description: "",
   passToClient: ["user", "isAdmin"],
   extends: [vikeVue],
@@ -74,7 +74,7 @@ const config: Config = {
 
 ### 2.2 站点配置表
 
-当前 `cffk/database/drizzle/schema.ts` 的 `siteSetting` 已包含：
+当前 `database/drizzle/schema.ts` 的 `siteSetting` 已包含：
 
 ```text
 siteName
@@ -100,7 +100,7 @@ logoIcon
 
 ### 2.3 页面数据
 
-当前首页 `cffk/server/catalog/public.ts` 的 `getPublicCatalog()` 已经查询部分站点信息；商品详情页 `cffk/pages/product/@slug/+data.server.ts` 查询商品和支付渠道，但没有全局站点上下文。
+当前首页 `server/catalog/public.ts` 的 `getPublicCatalog()` 已经查询部分站点信息；商品详情页 `pages/product/@slug/+data.server.ts` 查询商品和支付渠道，但没有全局站点上下文。
 
 因此实现时必须避免：
 
@@ -153,7 +153,7 @@ pageContext.site
 计划新增或调整以下文件：
 
 ```text
-cffk/
+MioKey/
 ├── pages/
 │   ├── +onBeforeRender.ts
 │   ├── +title.ts
@@ -423,7 +423,7 @@ export type PublicSiteSettings = {
 ### 5.1 默认值
 
 ```ts
-const DEFAULT_SITE_NAME = "CFFK发卡";
+const DEFAULT_SITE_NAME = "MioKey";
 const DEFAULT_SITE_DESCRIPTION = "自动发卡系统";
 ```
 
@@ -607,7 +607,7 @@ passToClient: ["user", "isAdmin", "site"],
 
 ```ts
 export default function title(pageContext: PageContext) {
-  return pageContext.site?.name || "CFFK发卡";
+  return pageContext.site?.name || "MioKey";
 }
 ```
 
@@ -681,7 +681,7 @@ description: {product.subtitle || product.description 摘要 || site.description
 示例：
 
 ```text
-title: Minecraft Java版账号 - CFFK发卡
+title: Minecraft Java版账号 - MioKey
 description: 正版 Minecraft Java 版账号，购买后自动发货。
 ```
 
@@ -1031,7 +1031,7 @@ export default {
 但最终展示时仍建议统一拼接站点名称：
 
 ```text
-订单查询 - CFFK发卡
+订单查询 - MioKey
 ```
 
 ---
@@ -1176,7 +1176,7 @@ curl -s https://example.com/product/example
 
 ## 21. 最终方案摘要
 
-当前 `cffk` 推荐采用以下方案：
+当前 `MioKey` 推荐采用以下方案：
 
 ```text
 D1 siteSetting

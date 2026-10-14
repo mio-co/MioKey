@@ -6,16 +6,16 @@
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <SidebarMenuButton size="lg" class="h-14 cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                <img :src="logoUrl" alt="CFFK Logo" class="aspect-square size-10 rounded-lg object-contain" />
+                <img :src="logoUrl" alt="MioKey Logo" class="aspect-square size-10 rounded-lg object-contain" />
                 <div class="grid flex-1 text-left leading-tight">
-                  <span class="truncate text-sm font-semibold">CFFK发卡</span>
+                  <span class="truncate text-sm font-semibold">MioKey</span>
                   <span class="truncate text-xs">系统管理后台</span>
                 </div>
                 <ChevronsUpDownIcon class="ml-auto" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="right" align="start" :side-offset="8" class="w-64">
-              <DropdownMenuLabel>关于 CFFK 发卡</DropdownMenuLabel>
+              <DropdownMenuLabel>关于 MioKey</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem @select.prevent="checkUpdate">
@@ -24,7 +24,7 @@
                   <span class="ml-auto text-xs text-muted-foreground">{{ updateStatus }}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem as-child>
-                  <a href="https://github.com/34892002/cffk" target="_blank" rel="noopener noreferrer">
+                  <a href="https://github.com/mio-co/MioKey" target="_blank" rel="noopener noreferrer">
                     <ExternalLinkIcon data-icon="inline-start" />
                     GitHub 仓库
                   </a>
@@ -207,7 +207,7 @@ async function checkUpdate() {
   lastCheckTime.value = now;
   updateStatus.value = "检查中...";
   try {
-    const response = await fetch("https://raw.githubusercontent.com/34892002/cffk/main/package.json");
+    const response = await fetch("https://raw.githubusercontent.com/mio-co/MioKey/main/package.json");
     const packageInfo = await response.json() as { version?: string };
     if (!response.ok || !packageInfo.version) throw new Error("invalid response");
     updateStatus.value = compareVersions(appVersion, packageInfo.version) >= 0 ? "已是最新" : `最新 v${packageInfo.version}`;

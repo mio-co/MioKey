@@ -6,7 +6,7 @@ const MERCHANT_NO = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const CHECKOUT_TOKEN = /^pct1_[A-Za-z0-9_-]{43}$/;
 const MAX_RESPONSE_BYTES = 256 * 1024;
 
-// PerPay adds a unique offset for ledger matching; only the requested amount enters cffk.
+// PerPay adds a unique offset for ledger matching; only the requested amount enters MioKey.
 function paymentAmounts(value: Record<string, unknown>, requireReceived = true, allowManualSettlement = false) {
   const requested = value.requested_amount_cents;
   const payable = value.payable_amount_cents;
@@ -161,7 +161,7 @@ export function createPerpayAdapter(config: PerpayConfig) {
       const eventType = typeof event.event_type === "string" ? event.event_type : "";
       if (event.schema !== "perpay:outbox-event:v2" || event.event_id !== eventId || !["PAYMENT_CONFIRMED", "PAYMENT_DISPUTED", "REFUND_UPDATED"].includes(eventType) || !UUID.test(String(event.order_id ?? "")) || !MERCHANT_NO.test(String(event.merchant_order_no ?? "")) || event.currency !== "CNY") return result({ verified: false, status: "FAILED", message: "PERPAY_WEBHOOK_INVALID" });
       if (eventType === "REFUND_UPDATED") {
-        // cffk does not mutate payment state for PerPay refunds.
+        // MioKey does not mutate payment state for PerPay refunds.
         return result({ verified: true, orderNo: String(event.merchant_order_no), paymentOrderNo: String(event.order_id), currency: "CNY", status: "PENDING", message: "PERPAY_REFUND_UPDATED" });
       }
       const amounts = paymentAmounts(event, true, eventType === "PAYMENT_CONFIRMED");

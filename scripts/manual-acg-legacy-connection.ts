@@ -38,7 +38,7 @@ try {
     categories: Array.isArray(body.data) ? body.data.length : undefined,
     leafProducts: Array.isArray(body.data) ? countLeafProducts(body.data) : undefined,
   }, null, 2));
-  console.log("\nCFFK adapter page 1:");
+  console.log("\nMioKey adapter page 1:");
   console.log(JSON.stringify(await adapter.listProducts({ page: 1, pageSize: 3 }), null, 2));
 } catch {
   console.log("Response body is not valid JSON");

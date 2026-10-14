@@ -11,7 +11,7 @@ import { schema } from "../database/drizzle/schema";
 import { dispatchPush } from "./push/service";
 import { getSiteSettings } from "./site/public-settings";
 
-const APP_NAME = "CFFK 发卡";
+const APP_NAME = "MioKey";
 
 type AuthRuntimeEnv = Record<string, unknown> & { DB?: D1Database };
 
@@ -131,7 +131,7 @@ export function getAuthConfig(runtime?: RuntimeAdapter, publicOrigin?: string, o
     },
     appName: APP_NAME,
     plugins: [
-      twoFactor({ issuer: "CFFK 发卡" }),
+      twoFactor({ issuer: "MioKey" }),
       ...(turnstile.enabled ? [captcha({ provider: "cloudflare-turnstile", secretKey: turnstile.secretKey!, endpoints: ["/sign-in/email"] })] : []),
     ],
   };
