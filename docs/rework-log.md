@@ -163,3 +163,46 @@ Demo orders in local D1; local EPAY enabled with fake gateway pay.example.com (b
 - robots.txt 引用 sitemap（静态文件不知道站点域名，需服务端生成）；LCP/安全头/压缩属部署层。
 - 公告条 CTA（需新设置项）。
 - 首页卡片库存文字仍按首规格库存。
+
+## Cycle 4 — 性能 / 深色 / 键盘 / 异常内容 / 繁中与英文（2026-10-14，提交 b351445、f3a53c6、a485cfb）
+
+计划与方案比较：docs/plans/cycle4.md。新探针：miokey-qa/c4_eval.py（深色模式真实对比度扫描、键盘 Tab 顺序与焦点环、抽屉焦点陷阱、超长商品名、zh-TW/en-US 残留扫描、后台手机触控）、c4_perf.py（生产预览 + iPhone 12 + 4× CPU + 1.6 Mbps/150ms，测 FCP/LCP/CLS 与资源字节）。
+
+### Findings（按价值排序）
+1. 订单查询 / 结算 / 支付结果页（支付页）全部硬编码简体：切到 English 或繁中后这三页仍是简体，标签页标题也一直是简体（“订单查询 · 店名”）。
+2. 搜索/菜单抽屉没有焦点陷阱：Tab 25 次后焦点跑到抽屉后面的页面（aria-modal 但键盘可离开）。
+3. 性能（手机降速）：首页 LCP 4.6s、FCP 3.9s，CLS 0。字体 169 KB（Archivo 四个字重各 52 KB 完整字库，但中文本来回退系统字体）；better-auth 客户端（约 50 KB gzip 的公共块）随 PublicNav 进入每个前台页面；首页有轮播时网格前 4 张图仍 eager。
+4. 首页卡片库存只看首规格（遗留）：多规格商品首规格售罄会整卡显示“已售罄”。
+5. 后台手机小目标（遗留）：时区组合框按钮 16px 且名叫英文 “Show popup”、设置子导航胶囊 36px、Telegram/企业微信教程标签 40px；复选框 ::after 扩展后命中区 40px（-12px）。
+6. 商品页数量输入框键盘聚焦没有可见焦点环（outline:none）。
+7. 深色模式：前台与后台 29 页无“浅底浅字/深底深字”问题；唯一对比度不足是登录页品牌面板 “Powered by MioKey”（3.66:1）；后台面包屑 “/” 分隔符 3.41:1 为 aria-hidden 装饰，不改。
+8. robots.txt 没有 Sitemap 行（遗留）。
+- 无问题项：超长商品名（卡片两行截断、商品页 h1 break-word，均无横向溢出）；后台 Tab 顺序（跳过链接 → 侧栏 → 顶栏 → 筛选 → 表格）、对话框焦点进入与 Esc 后焦点归还都正常；CLS 全部 0。
+
+### Changes
+- i18n（只改模板）：新增 `lib/i18n/page-text.ts`（以简体原文为键的英文词典；繁中用现有 traditionalize 转换）与 `pages/+onCreateApp.ts` 注册全局 `$tr(中文, params?)`。三张支付页模板里的文字、属性和脚本返回的状态/错误文字都包一层 `$tr`；三页 `<script>` 与改动前逐字相同（diff 校验）。固定标签的页面标题由 `useLocalizedDocumentTitle`（StoreShell/AuthShell）在客户端按语言重设；SSR 仍为简体。
+- 抽屉：StoreDrawer 的 keydown 里做 Tab / Shift+Tab 循环（无新依赖）。
+- 性能：Archivo 子集化为拉丁 + 常用标点（fontTools，OFL 无保留字体名，可子集）每个 52→23 KB 并加 unicode-range；PublicNav 退出登录时才 `import("@/lib/auth-client")`（调用同一个 `authClient.signOut()`，流程不变）；首页有轮播时网格图片全部 lazy。
+- 库存：`pages/index/+data.server.ts` 增加只读聚合（卡密 = UNUSED 卡数、实物 = physicalStock、供应商 = 不限），覆盖卡片的 availableStock；商品页与下单逻辑不变。
+- robots.txt：删除 public/robots.txt，`server/seo/sitemap.ts` 新增只读 `GET /robots.txt`（规则同前 + `Sitemap: <siteUrl>/sitemap.xml`），单测覆盖。
+- 后台手机：时区触发器 `aria-label="展开时区列表"`、36px 按钮且整行 44px；`.mk-touch-pill` 让邮件/支付设置子导航 44px；标签 44px；复选框/开关命中区 -14px（16px 复选框 = 44px）。
+- 数量输入框所在胶囊 `has-[input:focus-visible]:ring-2`；登录面板页脚 text-background/70。
+
+### 决策
+- 支付页翻译方案选全局模板函数而不是在脚本里引入 useStorefrontPreferences（脚本必须不变）或每段文字一个组件（属性无法翻译）。词典以简体原文为键：原文改动时英文会回落到简体而不会报错，可接受。
+- 店铺自定义数据（店名副标题、分类、商品名、页脚文字）保持原样，不机器翻译——那是店主内容。
+- 后台面包屑分隔符对比度不改（装饰、aria-hidden）。
+- LCP 主要卡在 JS 体积（Vue + Reka + vike 公共块约 550 KB 未压缩）与 1.6 Mbps 模拟网络；进一步拆包属于构建配置调整，收益不确定，记为遗留。
+
+### Tests（最终状态）
+- typecheck 39 = 基线；eslint 0；unit 101 pass / 0 fail（新增 robots 测试）；vike build 成功。
+- regress.py 新增 c4-*：drawer-trap、qty-focus-ring、aggregate-stock、grid-lazy、font-robots、locale-pages、locale-zh-default（前台），tz-trigger、admin-touch-44（后台手机）。四组（手机/桌面 × 前台/后台）全部 0 FAIL。
+- p1_check 30 项无错误/溢出；p2_check 手机 38 / 桌面 32 全通过。
+- axe：手机前台 0 违规；桌面后台 0 违规。
+- 性能复测（生产预览，手机降速）：字体 169→85 KB（登录页 161→54 KB）；首页 JS 551→534 KB（better-auth 客户端约 29 KB 已移出首页，只在退出登录/登录类页面加载）；首页 LCP 4.6→4.5s，FCP ≈4.0s，CLS 全部 0。LCP 仍主要受 JS 体积与模拟网络限制。
+
+### Deferred
+- 商品页主图带 animate-fade-in，LCP 要等淡入（降速下约 5s 级，波动大）；可考虑首屏主图不做淡入。
+- 前台 JS 拆包（Reka/vike 公共块）以进一步降低手机 LCP；部署层压缩/缓存头。
+- 店主内容（分类、商品名、页脚）的多语言需要数据结构支持 → 方向级，不做。
+- 公告条 CTA（需新设置项，同 Cycle 3）。
