@@ -16,11 +16,14 @@
         <button type="button" class="inline-flex h-11 items-center font-medium text-foreground underline-offset-4 hover:underline md:h-8" @click="query = ''">{{ messages.shop.clearSearch }}</button>
       </div>
 
-      <TransitionGroup v-if="visibleProducts.length" tag="div" name="mk-grid" class="mt-4 grid grid-cols-1 gap-x-3 gap-y-8 sm:grid-cols-2 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7 lg:gap-y-10 xl:grid-cols-4">
-        <ProductCard v-for="(product, index) in visibleProducts" :key="product.id" :product="product" :eager="index < 4" />
-      </TransitionGroup>
+      <!-- Swapping the filter replaces the grid in one go and fades the new one in; per-card move/enter animations made the page jolt. -->
+      <Transition name="mk-swap">
+        <div v-if="visibleProducts.length" :key="gridKey" class="mt-4 grid grid-cols-1 gap-x-3 gap-y-8 sm:grid-cols-2 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7 lg:gap-y-10 xl:grid-cols-4">
+          <ProductCard v-for="(product, index) in visibleProducts" :key="product.id" :product="product" :eager="index < 4" />
+        </div>
+      </Transition>
 
-      <div v-else class="mt-4 grid place-items-center rounded-[24px] border border-dashed px-6 py-20 text-center">
+      <div v-if="!visibleProducts.length" class="mt-4 grid place-items-center rounded-[24px] border border-dashed px-6 py-20 text-center">
         <span class="grid size-14 place-items-center rounded-full bg-muted"><PackageOpenIcon class="size-6 text-muted-foreground" /></span>
         <h3 class="mk-display mt-4 text-lg">{{ query ? messages.shop.searchEmpty : messages.storefront.noProducts }}</h3>
         <p v-if="!query" class="mt-2 text-sm text-muted-foreground">{{ messages.storefront.noProductsDescription }}</p>
@@ -82,8 +85,12 @@ const visibleProducts = computed(() => {
 });
 
 function scrollToProducts() {
-  document.getElementById("products")?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  // Only scroll back when the visitor is already below the top of the list; at the top a scroll just nudges the header.
+  const section = document.getElementById("products");
+  if (!section || section.getBoundingClientRect().top >= 0) return;
+  section.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
+const gridKey = computed(() => `${selectedCategory.value ?? "all"}|${query.value}`);
 function selectCategory(id: number | null) {
   selectedCategory.value = id === null || data.categories.some((item) => item.id === id) ? id : null;
   if (typeof window !== "undefined") scrollToProducts();
@@ -119,8 +126,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.mk-grid-move { transition: transform 0.6s var(--ease-out-expo); }
-.mk-grid-enter-active { transition: opacity 0.45s var(--ease-out-expo), transform 0.45s var(--ease-out-expo); }
-.mk-grid-enter-from { opacity: 0; transform: translateY(12px) scale(0.98); }
-.mk-grid-leave-active { display: none; }
+.mk-swap-enter-active { transition: opacity 0.22s ease-out; }
+.mk-swap-enter-from { opacity: 0; }
+.mk-swap-leave-active { display: none; }
+@media (prefers-reduced-motion: reduce) { .mk-swap-enter-active { transition: none; } }
 </style>

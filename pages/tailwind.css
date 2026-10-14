@@ -259,7 +259,7 @@
     @apply border-border;
   }
 
-  html { -webkit-tap-highlight-color: transparent; }
+  html { -webkit-tap-highlight-color: transparent; scrollbar-gutter: stable; }
   button:not(:disabled), [role="button"]:not([aria-disabled="true"]), summary, label[for] { cursor: pointer; }
   /* Visible keyboard focus everywhere in the storefront (custom pills, links, drawer items). */
   .mk-store :where(a, button, summary, input, [tabindex]):focus-visible { outline: 2px solid var(--foreground); outline-offset: 2px; }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { ArrowRightIcon, ChevronRightIcon, LanguagesIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, XIcon } from "@lucide/vue";
+import { ArrowRightIcon, ChevronDownIcon, ChevronRightIcon, LanguagesIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, XIcon } from "@lucide/vue";
 import { usePageContext } from "vike-vue/usePageContext";
 
 import CategoryMenu from "@/components/storefront/CategoryMenu.vue";
@@ -28,8 +28,18 @@ const menuOpen = ref(false);
 const searchOpen = ref(false);
 const categoryMenuOpen = ref(false);
 // Pages without the catalogue in their data (order lookup, account…) fetch the category list when the menu opens.
-const { categories: menuCategories, ensure: ensureCategories } = useNavCategories(() => props.categories, () => props.productTotal);
-watch(menuOpen, (value) => { if (value) void ensureCategories(); });
+const { categories: menuCategories, totalCount: menuTotal, ensure: ensureCategories } = useNavCategories(() => props.categories, () => props.productTotal);
+// Drawer second level under "All products"; starts open when the visitor is browsing the catalogue.
+const menuCategoriesOpen = ref(false);
+const drawerCategories = computed(() => [
+  { id: null as number | null, name: messages.value.storefront.all, count: menuTotal.value ?? undefined },
+  ...menuCategories.value.map((item) => ({ id: item.id as number | null, name: item.name, count: item.count })),
+]);
+watch(menuOpen, (value) => {
+  if (!value) return;
+  void ensureCategories();
+  menuCategoriesOpen.value = currentCategory.value !== null || pathname.value.startsWith("/product/");
+});
 const query = ref("");
 const { navigateFromDrawer: navigateFromMenu } = useDrawerHistory(menuOpen, (value) => { menuOpen.value = value; });
 const { navigateFromDrawer: navigateFromSearch } = useDrawerHistory(searchOpen, (value) => { searchOpen.value = value; });
@@ -179,31 +189,47 @@ const locales: { key: StorefrontLocale; label: string }[] = [
           <button type="button" class="grid h-full w-15 place-items-center border-l" data-autofocus :aria-label="messages.shop.closeMenu" @click="close"><XIcon class="size-5" /></button>
         </div>
         <nav class="flex-1 overflow-y-auto px-5 py-4" :aria-label="messages.nav.main">
-          <a
-            v-for="(link, index) in navLinks"
-            :key="link.href"
-            :href="link.href"
-            :aria-current="link.active ? 'page' : undefined"
-            class="mk-menu-item mk-display flex items-center justify-between border-b py-4 text-[19px]"
-            :style="{ '--i': index }"
-            @click="navigateFromMenu(link.href, $event)"
-          >{{ link.label }}<ChevronRightIcon class="size-5 text-muted-foreground" /></a>
+          <template v-for="(link, index) in navLinks" :key="link.href">
+            <!-- "All products" carries its categories as a collapsible second level. -->
+            <div v-if="link.href === '/#products' && menuCategories.length" class="mk-menu-item border-b" :style="{ '--i': index }">
+              <div class="flex items-center">
+                <a :href="link.href" :aria-current="link.active ? 'page' : undefined" class="mk-display flex-1 py-4 text-[19px]" @click="navigateFromMenu(link.href, $event)">{{ link.label }}</a>
+                <button
+                  type="button"
+                  class="-mr-2 grid size-11 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+                  :aria-expanded="menuCategoriesOpen"
+                  aria-controls="mk-drawer-categories"
+                  :aria-label="messages.storefront.categories"
+                  @click="menuCategoriesOpen = !menuCategoriesOpen"
+                >
+                  <ChevronDownIcon class="size-5 transition-transform duration-300 motion-reduce:transition-none" :class="menuCategoriesOpen ? 'rotate-180' : ''" />
+                </button>
+              </div>
+              <div id="mk-drawer-categories" class="grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none" :class="menuCategoriesOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'">
+                <ul class="min-h-0 overflow-hidden" :inert="!menuCategoriesOpen || undefined">
+                  <li v-for="category in drawerCategories" :key="String(category.id)">
+                    <a
+                      :href="category.id === null ? '/#products' : `/?category=${category.id}#products`"
+                      :aria-current="pathname === '/' && currentCategory === (category.id === null ? null : String(category.id)) ? 'page' : undefined"
+                      class="flex min-h-11 items-center justify-between rounded-xl pl-4 pr-2 text-[15px] text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-foreground"
+                      @click="navigateFromMenu(category.id === null ? '/#products' : `/?category=${category.id}#products`, $event)"
+                    >{{ category.name }}<span v-if="category.count != null" class="text-xs tabular-nums opacity-70">{{ category.count }}</span></a>
+                  </li>
+                  <li aria-hidden="true" class="h-3" />
+                </ul>
+              </div>
+            </div>
+            <a
+              v-else
+              :href="link.href"
+              :aria-current="link.active ? 'page' : undefined"
+              class="mk-menu-item mk-display flex items-center justify-between border-b py-4 text-[19px]"
+              :style="{ '--i': index }"
+              @click="navigateFromMenu(link.href, $event)"
+            >{{ link.label }}<ChevronRightIcon class="size-5 text-muted-foreground" /></a>
+          </template>
           <a v-if="user" href="/account" class="mk-menu-item mk-display flex items-center justify-between border-b py-4 text-[19px]" :style="{ '--i': navLinks.length }" @click="navigateFromMenu('/account', $event)">{{ messages.nav.accountSettings }}<ChevronRightIcon class="size-5 text-muted-foreground" /></a>
           <button type="button" class="mk-menu-item mk-display flex w-full items-center justify-between border-b py-4 text-left text-[19px]" :style="{ '--i': navLinks.length + 1 }" @click="openSearch">{{ messages.shop.search }}<SearchIcon class="size-5 text-muted-foreground" /></button>
-
-          <div v-if="menuCategories.length" class="mt-6">
-            <p class="mb-2 text-sm text-muted-foreground">{{ messages.storefront.categories }}</p>
-            <div class="flex flex-wrap gap-2">
-              <a
-                v-for="category in menuCategories"
-                :key="category.id"
-                :href="`/?category=${category.id}#products`"
-                :aria-current="currentCategory === String(category.id) ? 'page' : undefined"
-                class="inline-flex h-11 items-center rounded-full border px-4 text-sm transition-colors duration-300 hover:border-foreground aria-[current=page]:border-foreground aria-[current=page]:bg-foreground aria-[current=page]:text-background md:h-10"
-                @click="navigateFromMenu(`/?category=${category.id}#products`, $event)"
-              >{{ category.name }}</a>
-            </div>
-          </div>
 
           <div class="mt-6 grid gap-4">
             <div>

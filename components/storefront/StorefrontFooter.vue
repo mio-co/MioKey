@@ -30,9 +30,9 @@
       </div>
     </div>
     <div class="border-t">
-      <div class="mk-page flex flex-col gap-3 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+      <div class="mk-page flex items-center justify-between gap-4 py-3 text-xs text-muted-foreground sm:py-5">
         <p>{{ messages.shop.poweredBy }}</p>
-        <button type="button" class="mk-link inline-flex min-h-11 items-center self-start sm:min-h-0 sm:self-auto" @click="scrollToTop">{{ messages.shop.backToTop }} ↑</button>
+        <button type="button" class="mk-link inline-flex min-h-11 shrink-0 items-center sm:min-h-0" @click="scrollToTop">{{ messages.shop.backToTop }} ↑</button>
       </div>
     </div>
   </footer>
