@@ -122,7 +122,7 @@
                 <VeeField v-slot="{ componentField, errors }" name="footerText" :validate-on-input="true">
                   <Field :data-invalid="errors.length > 0">
                     <FieldLabel for="site-footer-text">页脚文案</FieldLabel>
-                    <Textarea id="site-footer-text" v-bind="componentField" rows="3" placeholder="例如：© 2026 MioKey 版权所有" :aria-invalid="errors.length > 0" />
+                    <Textarea id="site-footer-text" v-bind="componentField" rows="3" placeholder="网站描述，显示在页脚品牌下方；留空则使用站点副标题" :aria-invalid="errors.length > 0" />
                     <FieldError v-if="errors.length" :errors="errors" />
                   </Field>
                 </VeeField>

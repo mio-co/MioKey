@@ -24,7 +24,6 @@ type CacheEntry = {
 const CACHE_TTL_MS = 60_000;
 let settingsCache: CacheEntry | null = null;
 
-export const DEFAULT_FOOTER_TEXT = "© 2026 MioKey · 基于 Apache-2.0 开源";
 export const DEFAULT_SUPPORT_CONTACT = "GitHub|https://github.com/mio-co/MioKey";
 
 const defaultSettings: SiteSettingRecord = {
@@ -73,7 +72,7 @@ export function toPublicSiteSettings(record: SiteSettingRecord): PublicSiteSetti
     logoIcon: record.logoIcon || record.logo,
     notice: record.notice,
     supportContact: record.supportContact?.trim() || DEFAULT_SUPPORT_CONTACT,
-    footerText: record.footerText?.trim() || DEFAULT_FOOTER_TEXT,
+    footerText: record.footerText?.trim() || null,
     orderNotice: record.orderNotice,
   };
 }
