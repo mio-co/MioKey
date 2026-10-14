@@ -1,19 +1,19 @@
 <template>
   <StoreShell bottom-bar>
-    <div class="mk-page pb-16 pt-4 sm:pt-6 lg:pb-[var(--mk-sec)]">
+    <div class="mk-page pb-16 pt-1 sm:pt-6 lg:pb-[var(--mk-sec)]">
       <nav class="flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground" :aria-label="messages.shop.product.breadcrumb">
-        <a href="/" class="mk-link shrink-0 hover:text-foreground">{{ messages.shop.home }}</a>
+        <a href="/" class="mk-link inline-flex min-h-11 shrink-0 items-center hover:text-foreground sm:min-h-0">{{ messages.shop.home }}</a>
         <ChevronRightIcon class="size-3.5 shrink-0" />
-        <a href="/#products" class="mk-link shrink-0 hover:text-foreground">{{ data.categoryName || messages.shop.allProducts }}</a>
+        <a href="/#products" class="mk-link inline-flex min-h-11 shrink-0 items-center hover:text-foreground sm:min-h-0">{{ data.categoryName || messages.shop.allProducts }}</a>
         <ChevronRightIcon class="size-3.5 shrink-0" />
         <span class="truncate text-foreground" aria-current="page">{{ data.name }}</span>
       </nav>
 
-      <section class="mt-4 grid gap-8 sm:mt-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-14 xl:gap-20">
+      <section class="mt-1 grid gap-8 sm:mt-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-14 xl:gap-20">
         <div class="min-w-0">
           <div class="lg:sticky lg:top-24">
             <div class="mk-card-media aspect-[4/3]">
-              <img :src="data.coverImage || defaultProductImage" :alt="data.name" class="size-full animate-fade-in object-cover" fetchpriority="high" />
+              <img :src="data.coverImage || defaultProductImage" :alt="data.name" width="1200" height="900" class="size-full animate-fade-in object-cover" fetchpriority="high" />
             </div>
           </div>
         </div>
@@ -26,7 +26,7 @@
             <p class="font-display text-[32px] font-semibold leading-none tabular-nums" aria-live="polite"><span class="mr-0.5 text-xl">¥</span>{{ selectedSku.price }}</p>
             <span v-if="isOutOfStock" class="rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background">{{ messages.shop.soldOut }}</span>
             <span v-else-if="isStockLimited && availableStock <= 5" class="rounded-full bg-[#fda084] px-3 py-1 text-xs font-semibold text-black">{{ t(messages.shop.lowStock, { count: availableStock }) }}</span>
-            <span v-else class="inline-flex items-center gap-1.5 text-[13px] text-success"><span class="size-1.5 rounded-full bg-current" />{{ messages.shop.inStockReady }}</span>
+            <span v-else class="inline-flex items-center gap-1.5 text-[13px] text-success"><span class="size-1.5 rounded-full bg-current" />{{ selectedSku.deliveryType === 'MANUAL' || selectedSku.deliveryType === 'EXPRESS' ? messages.shop.inStockManual : messages.shop.inStockReady }}</span>
           </div>
 
           <form id="mk-buy" class="mt-8 grid min-w-0 gap-7 border-t pt-7" novalidate @submit.prevent="submit">
@@ -57,7 +57,7 @@
                 </div>
                 <span v-if="isStockLimited" class="text-xs text-muted-foreground">{{ t(messages.productCheckout.availableStock, { count: availableStock }) }}</span>
               </div>
-              <label class="grid min-w-0 content-start gap-3 text-sm font-semibold"><span><span class="text-destructive">*</span> {{ messages.productCheckout.contactEmail }}</span><Input v-model="contactValue" type="email" autocomplete="email" required class="h-12" /></label>
+              <label for="buy-email" class="grid min-w-0 content-start gap-3 text-sm font-semibold"><span><span class="text-destructive" aria-hidden="true">*</span> {{ messages.productCheckout.contactEmail }}</span><Input id="buy-email" v-model="contactValue" type="email" autocomplete="email" required class="h-12" /></label>
             </div>
 
             <p v-if="requiresPayment && !methods.length" class="rounded-[18px] border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{{ messages.productCheckout.noPaymentMethod }}</p>
@@ -95,7 +95,7 @@
             <details class="group rounded-[20px] border px-4 sm:px-5" :open="Boolean(discountPreview) || undefined">
               <summary class="flex min-h-13 cursor-pointer list-none items-center justify-between gap-3 py-3.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">{{ messages.shop.product.extras }}<PlusIcon class="size-4 transition-transform duration-500 ease-out-expo group-open:rotate-45" /></summary>
               <div class="grid gap-4 pb-5">
-                <div class="grid gap-2 text-sm font-medium"><span>{{ messages.productCheckout.discountCode }}</span><div class="flex gap-2"><Input v-model="discountCode" autocomplete="off" @keydown.enter.prevent="onApplyDiscount" /><Button type="button" variant="outline" :disabled="discountApplying || !discountCode.trim()" @click="onApplyDiscount">{{ discountApplying ? messages.productCheckout.applyingDiscount : messages.productCheckout.applyDiscount }}</Button></div></div>
+                <div class="grid gap-2 text-sm font-medium"><label for="buy-discount-code">{{ messages.productCheckout.discountCode }}</label><div class="flex gap-2"><Input id="buy-discount-code" v-model="discountCode" autocomplete="off" @keydown.enter.prevent="onApplyDiscount" /><Button type="button" variant="outline" :disabled="discountApplying || !discountCode.trim()" @click="onApplyDiscount">{{ discountApplying ? messages.productCheckout.applyingDiscount : messages.productCheckout.applyDiscount }}</Button></div></div>
                 <label class="grid gap-2 text-sm font-medium">{{ messages.productCheckout.buyerNote }}<Textarea v-model="buyerNote" rows="3" /></label>
               </div>
             </details>
@@ -128,7 +128,7 @@
     </div>
 
     <!-- Phone: sticky buy bar that submits the same form. -->
-    <div class="mk-buy-bar fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
+    <StickyBuyBar target="[data-testid=buy-submit]" class="mk-buy-bar fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:hidden">
       <div class="flex items-center gap-3">
         <div class="min-w-0 flex-1">
           <p class="truncate text-xs text-muted-foreground">{{ selectedSku.name || data.name }}</p>
@@ -138,7 +138,7 @@
           {{ loading ? messages.productCheckout.processingOrder : isOutOfStock ? messages.storefront.outOfStock : messages.shop.product.mobileBuy }}
         </button>
       </div>
-    </div>
+    </StickyBuyBar>
 
     <Dialog :open="Boolean(previewImage)" @update:open="(open) => { if (!open) previewImage = null; }">
       <DialogContent :show-close-button="false" class="w-fit! max-w-[calc(100vw-2rem)]! border-0 bg-transparent p-0 shadow-none sm:max-w-[calc(100vw-4rem)]!" @interact-outside="previewImage = null">
@@ -175,6 +175,7 @@ import { useData } from "vike-vue/useData";
 import { usePageContext } from "vike-vue/usePageContext";
 
 import StoreShell from "@/components/storefront/StoreShell.vue";
+import StickyBuyBar from "@/components/storefront/StickyBuyBar.vue";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";

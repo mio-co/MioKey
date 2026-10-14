@@ -82,7 +82,7 @@ const locales: { key: StorefrontLocale; label: string }[] = [
       :class="[scrolled ? 'border-border/70 shadow-[0_1px_0_0_rgb(0_0_0/0.02)]' : '', hidden && !menuOpen && !searchOpen ? '-translate-y-full' : '']"
     >
       <div :class="['mx-auto flex h-16 items-center gap-3 lg:h-[72px]', narrow ? 'max-w-5xl px-4 sm:px-6' : 'mk-page']">
-        <button type="button" class="-ml-2 grid size-10 place-items-center rounded-full transition-colors hover:bg-muted md:hidden" :aria-label="messages.shop.openMenu" :aria-expanded="menuOpen" @click="menuOpen = true">
+        <button type="button" class="-ml-2 grid size-11 place-items-center rounded-full transition-colors hover:bg-muted md:hidden md:size-10" :aria-label="messages.shop.openMenu" :aria-expanded="menuOpen" @click="menuOpen = true">
           <MenuIcon class="size-5" />
         </button>
         <div class="flex min-w-0 flex-1 items-center gap-8 max-md:justify-center">
@@ -99,7 +99,7 @@ const locales: { key: StorefrontLocale; label: string }[] = [
           </nav>
         </div>
         <div class="flex shrink-0 items-center">
-          <button type="button" class="grid size-10 place-items-center rounded-full transition-colors hover:bg-muted" :aria-label="messages.shop.search" data-testid="header-search" @click="openSearch">
+          <button type="button" class="grid size-11 place-items-center rounded-full transition-colors hover:bg-muted md:size-10" :aria-label="messages.shop.search" data-testid="header-search" @click="openSearch">
             <SearchIcon class="size-[19px]" />
           </button>
           <PublicNav />
@@ -182,14 +182,14 @@ const locales: { key: StorefrontLocale; label: string }[] = [
             <div>
               <p class="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><LanguagesIcon class="size-4" />{{ messages.preferences.language }}</p>
               <div class="flex flex-wrap gap-2">
-                <button v-for="item in locales" :key="item.key" type="button" :aria-pressed="locale === item.key" class="h-10 rounded-full border px-4 text-sm transition-colors aria-pressed:border-foreground aria-pressed:bg-foreground aria-pressed:text-background" @click="setLocale(item.key)">{{ item.label }}</button>
+                <button v-for="item in locales" :key="item.key" type="button" :aria-pressed="locale === item.key" class="h-11 rounded-full border px-4 text-sm md:h-10 transition-colors aria-pressed:border-foreground aria-pressed:bg-foreground aria-pressed:text-background" @click="setLocale(item.key)">{{ item.label }}</button>
               </div>
             </div>
             <div>
               <p class="mb-2 text-sm text-muted-foreground">{{ messages.preferences.theme }}</p>
               <div class="inline-flex rounded-full border p-1">
-                <button type="button" :aria-pressed="theme === 'light'" class="flex h-9 items-center gap-1.5 rounded-full px-4 text-sm transition-colors aria-pressed:bg-foreground aria-pressed:text-background" @click="setTheme('light')"><SunIcon class="size-4" />{{ messages.preferences.light }}</button>
-                <button type="button" :aria-pressed="theme === 'dark'" class="flex h-9 items-center gap-1.5 rounded-full px-4 text-sm transition-colors aria-pressed:bg-foreground aria-pressed:text-background" @click="setTheme('dark')"><MoonIcon class="size-4" />{{ messages.preferences.dark }}</button>
+                <button type="button" :aria-pressed="theme === 'light'" class="flex h-11 items-center gap-1.5 rounded-full px-4 md:h-9 text-sm transition-colors aria-pressed:bg-foreground aria-pressed:text-background" @click="setTheme('light')"><SunIcon class="size-4" />{{ messages.preferences.light }}</button>
+                <button type="button" :aria-pressed="theme === 'dark'" class="flex h-11 items-center gap-1.5 rounded-full px-4 md:h-9 text-sm transition-colors aria-pressed:bg-foreground aria-pressed:text-background" @click="setTheme('dark')"><MoonIcon class="size-4" />{{ messages.preferences.dark }}</button>
               </div>
             </div>
           </div>

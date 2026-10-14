@@ -2,13 +2,13 @@
   <AuthShell>
     <template #aside>
       <p class="mk-eyebrow text-background/60">{{ messages.auth.login.tagline }}</p>
-      <h1 class="mt-5 whitespace-pre-line text-[clamp(32px,3.4vw,52px)] font-semibold leading-[1.1] tracking-[-0.02em]">{{ messages.auth.login.headline }}</h1>
+      <p class="mt-5 whitespace-pre-line text-[clamp(32px,3.4vw,52px)] font-semibold leading-[1.1] tracking-[-0.02em]">{{ messages.auth.login.headline }}</p>
       <p class="mt-6 max-w-sm text-base leading-7 text-background/70">{{ messages.auth.login.description }}</p>
       <ol class="mt-12 grid gap-3">
         <li v-for="(step, index) in loginSteps" :key="step.label" class="flex items-center gap-4 rounded-2xl bg-background/[0.06] p-3 pr-5 ring-1 ring-background/10">
           <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-background text-foreground"><component :is="step.icon" class="size-5" /></span>
           <span class="text-[15px] font-medium">{{ step.label }}</span>
-          <span class="ml-auto font-display text-sm tabular-nums text-background/40">0{{ index + 1 }}</span>
+          <span class="ml-auto font-display text-sm tabular-nums text-background/65" aria-hidden="true">0{{ index + 1 }}</span>
         </li>
       </ol>
       <p class="mt-10 flex items-center gap-2 text-sm text-background/60"><LockKeyholeIcon class="size-4" />{{ messages.auth.login.sslProtected }}</p>
@@ -17,7 +17,7 @@
     <Card class="w-full">
       <CardHeader>
         <img :src="brandLogoUrl" :alt="`${siteName} Logo`" class="mb-4 size-12 rounded-2xl object-contain lg:hidden" />
-        <CardTitle>{{ messages.auth.login.welcomeBack }}</CardTitle>
+        <CardTitle as="h1">{{ messages.auth.login.welcomeBack }}</CardTitle>
       </CardHeader>
       <form novalidate @submit.prevent="submit">
         <CardContent>

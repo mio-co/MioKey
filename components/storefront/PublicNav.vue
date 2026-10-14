@@ -30,7 +30,7 @@
       </Transition>
     </Button>
     <template v-if="!user">
-      <Button size="sm" class="ml-1 h-9 rounded-full px-4 sm:px-5" as-child><a href="/login">{{ messages.nav.signIn }}</a></Button>
+      <Button size="sm" class="ml-1 h-10 rounded-full px-4 sm:px-5 md:h-9" as-child><a href="/login">{{ messages.nav.signIn }}</a></Button>
     </template>
     <template v-else>
       <DropdownMenu>

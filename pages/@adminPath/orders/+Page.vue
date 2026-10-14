@@ -7,8 +7,8 @@
       <template #toolbar>
         <div class="flex flex-wrap items-center gap-2">
           <Input v-model="filters.query" class="h-8 w-56" placeholder="按订单号搜索" @keyup.enter="resetAndLoad" />
-          <Select :model-value="filters.status || 'ALL'" @update:model-value="filters.status = $event === 'ALL' ? '' : $event as Order['status']"><SelectTrigger size="sm" class="w-36 shrink-0"><SelectValue placeholder="全部订单状态" /></SelectTrigger><SelectContent><SelectItem value="ALL">全部订单状态</SelectItem><SelectItem value="PENDING">待支付</SelectItem><SelectItem value="PAID">已支付</SelectItem><SelectItem value="DELIVERED">已发货</SelectItem><SelectItem value="CLOSED">已关闭</SelectItem><SelectItem value="FAILED">失败</SelectItem></SelectContent></Select>
-          <Select :model-value="filters.deliveryStatus || 'ALL'" @update:model-value="filters.deliveryStatus = $event === 'ALL' ? '' : $event as Order['deliveryStatus']"><SelectTrigger size="sm" class="w-36 shrink-0"><SelectValue placeholder="全部发货状态" /></SelectTrigger><SelectContent><SelectItem value="ALL">全部发货状态</SelectItem><SelectItem value="NOT_DELIVERED">未发货</SelectItem><SelectItem value="DELIVERING">发货中</SelectItem><SelectItem value="DELIVERED">已发货</SelectItem><SelectItem value="FAILED">发货失败</SelectItem></SelectContent></Select>
+          <Select :model-value="filters.status || 'ALL'" @update:model-value="filters.status = $event === 'ALL' ? '' : $event as Order['status']"><SelectTrigger size="sm" class="w-36 shrink-0" aria-label="按订单状态筛选"><SelectValue placeholder="全部订单状态" /></SelectTrigger><SelectContent><SelectItem value="ALL">全部订单状态</SelectItem><SelectItem value="PENDING">待支付</SelectItem><SelectItem value="PAID">已支付</SelectItem><SelectItem value="DELIVERED">已发货</SelectItem><SelectItem value="CLOSED">已关闭</SelectItem><SelectItem value="FAILED">失败</SelectItem></SelectContent></Select>
+          <Select :model-value="filters.deliveryStatus || 'ALL'" @update:model-value="filters.deliveryStatus = $event === 'ALL' ? '' : $event as Order['deliveryStatus']"><SelectTrigger size="sm" class="w-36 shrink-0" aria-label="按发货状态筛选"><SelectValue placeholder="全部发货状态" /></SelectTrigger><SelectContent><SelectItem value="ALL">全部发货状态</SelectItem><SelectItem value="NOT_DELIVERED">未发货</SelectItem><SelectItem value="DELIVERING">发货中</SelectItem><SelectItem value="DELIVERED">已发货</SelectItem><SelectItem value="FAILED">发货失败</SelectItem></SelectContent></Select>
           <div class="w-64 shrink-0"><DateRangePicker v-model="dateRange" /></div>
           <Button size="sm" @click="resetAndLoad">查询</Button>
           <Button variant="outline" size="sm" @click="resetFilters">重置</Button>
@@ -148,9 +148,19 @@
 
     <Dialog v-model:open="deliveryOpen" @update:open="onDeliveryOpenChange">
       <DialogContent class="grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden p-0" @interact-outside.prevent @escape-key-down.prevent>
-        <DialogHeader class="border-b px-6 py-5 pr-14"><DialogTitle>处理发货</DialogTitle><DialogDescription>人工或物流订单填写发货内容；自动卡密订单执行恢复发货。</DialogDescription></DialogHeader>
-        <div class="min-h-0 overflow-y-auto px-6 py-5"><label class="grid gap-2 text-sm font-medium">发货内容<Textarea v-model="deliveryContent" rows="6" class="min-h-28 w-full" placeholder="人工发货说明、物流单号或物流信息" /></label><p class="mt-3 text-xs text-muted-foreground">标记失败不会占用成功发货快照，修正内容后可再次完成发货。</p></div>
-        <DialogFooter class="flex flex-wrap border-t px-6 py-4"><Button :disabled="delivering" @click="completeDelivery">确认发货</Button><Button variant="outline" :disabled="delivering" @click="retryAutomatic">重试自动发货</Button><Button variant="destructive" :disabled="delivering" @click="markDeliveryFailed">标记发货失败</Button><Button variant="ghost" :disabled="delivering" @click="closeDelivery">取消</Button></DialogFooter>
+        <template v-for="deliveryKind in [orders.find((item) => item.id === deliveryOrderId)?.deliveryType]" :key="deliveryKind ?? 'unknown'">
+          <DialogHeader class="border-b px-6 py-5 pr-14"><DialogTitle>{{ deliveryKind === 'CARD_AUTO' || deliveryKind === 'FIXED_CARD' ? '重试自动发货' : '处理发货' }}</DialogTitle><DialogDescription>{{ deliveryKind === 'CARD_AUTO' || deliveryKind === 'FIXED_CARD' ? '这是自动发货订单，重新执行自动发货即可；卡密订单会从库存中分配。' : deliveryKind === 'MANUAL' || deliveryKind === 'EXPRESS' ? '填写发货内容（账号、卡密或物流单号），确认后买家即可在订单中看到。' : '人工或物流订单填写发货内容；自动卡密订单执行恢复发货。' }}</DialogDescription></DialogHeader>
+          <div class="min-h-0 overflow-y-auto px-6 py-5">
+            <template v-if="deliveryKind !== 'CARD_AUTO' && deliveryKind !== 'FIXED_CARD'"><label class="grid gap-2 text-sm font-medium">发货内容<Textarea v-model="deliveryContent" rows="6" class="min-h-28 w-full" placeholder="人工发货说明、物流单号或物流信息" /></label><p class="mt-3 text-xs text-muted-foreground">标记失败不会占用成功发货快照，修正内容后可再次完成发货。</p></template>
+            <p v-else class="text-sm text-muted-foreground">如果仍未发货，请先到「卡密管理」确认该商品规格还有可用库存。</p>
+          </div>
+          <DialogFooter class="flex flex-wrap border-t px-6 py-4">
+            <template v-if="deliveryKind !== 'CARD_AUTO' && deliveryKind !== 'FIXED_CARD'"><Button :disabled="delivering || !deliveryContent.trim()" data-testid="delivery-confirm" @click="completeDelivery">确认发货</Button></template>
+            <Button v-if="deliveryKind !== 'MANUAL' && deliveryKind !== 'EXPRESS'" :variant="deliveryKind ? 'default' : 'outline'" :disabled="delivering" data-testid="delivery-retry-auto" @click="retryAutomatic">重试自动发货</Button>
+            <Button v-if="deliveryKind !== 'CARD_AUTO' && deliveryKind !== 'FIXED_CARD'" variant="destructive" :disabled="delivering || !deliveryContent.trim()" data-testid="delivery-mark-failed" @click="markDeliveryFailed">标记发货失败</Button>
+            <Button variant="ghost" :disabled="delivering" @click="closeDelivery">取消</Button>
+          </DialogFooter>
+        </template>
       </DialogContent>
     </Dialog>
 

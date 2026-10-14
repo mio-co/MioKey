@@ -243,11 +243,11 @@ function formatDate(value: Date) {
         </div>
         <div class="flex w-full flex-wrap items-center gap-3 lg:w-[70%]">
           <Select :model-value="filters.productId === undefined ? 'all' : String(filters.productId)" @update:model-value="filters.productId = $event === 'all' ? undefined : Number($event)">
-            <SelectTrigger size="sm" class="w-52 shrink-0"><SelectValue placeholder="选择商品" /></SelectTrigger>
+            <SelectTrigger size="sm" class="w-52 shrink-0" aria-label="按商品筛选"><SelectValue placeholder="选择商品" /></SelectTrigger>
             <SelectContent><SelectItem value="all">全部商品</SelectItem><SelectItem v-for="item in data.products" :key="item.id" :value="String(item.id)">{{ item.name }}</SelectItem></SelectContent>
           </Select>
           <Select :model-value="filters.status ?? 'all'" @update:model-value="filters.status = $event === 'all' ? undefined : $event as CardStatus">
-            <SelectTrigger size="sm" class="w-32 shrink-0"><SelectValue placeholder="选择状态" /></SelectTrigger>
+            <SelectTrigger size="sm" class="w-32 shrink-0" aria-label="按状态筛选"><SelectValue placeholder="选择状态" /></SelectTrigger>
             <SelectContent><SelectItem value="all">全部状态</SelectItem><SelectItem value="UNUSED">未售出</SelectItem><SelectItem value="SOLD">已售出</SelectItem><SelectItem value="DISABLED">已禁用</SelectItem></SelectContent>
           </Select>
           <Input v-model="filters.batchNo" class="h-8 w-40 shrink-0" placeholder="批次号" @keyup.enter="search" />

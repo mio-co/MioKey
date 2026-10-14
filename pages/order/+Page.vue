@@ -3,15 +3,15 @@
     <section class="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:pb-20">
       <div class="mb-6">
         <h1 class="mk-h1">订单中心</h1>
-        <p class="mt-1 text-sm text-muted-foreground">通过本机记录、订单号和下单邮箱查询或恢复匿名订单。</p>
+        <p class="mt-1 text-sm text-muted-foreground">未登录下单也能查：输入订单号和下单邮箱，或用邮箱验证码找回本机订单记录。</p>
       </div>
 
       <div class="grid items-start gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
         <aside ref="orderSidebar" class="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle class="text-base">查询匿名订单</CardTitle>
-              <CardDescription>使用订单号和对应的下单邮箱查询详情。</CardDescription>
+              <CardTitle as="h2" class="text-base">按订单号查询</CardTitle>
+              <CardDescription>订单号可在下单后的页面或通知邮件中找到。</CardDescription>
             </CardHeader>
             <form novalidate @submit.prevent="submitQuery">
               <CardContent>
@@ -35,7 +35,7 @@
               </CardContent>
               <CardFooter class="pt-5">
                 <Button type="submit" class="w-full" :disabled="querySubmitting">
-                  <SearchIcon data-icon="inline-start" />{{ querySubmitting ? "查询中..." : "查询匿名订单" }}
+                  <SearchIcon data-icon="inline-start" />{{ querySubmitting ? "查询中..." : "查询订单" }}
                 </Button>
               </CardFooter>
             </form>
@@ -43,8 +43,8 @@
 
           <Card>
             <CardHeader>
-              <CardTitle class="text-base">邮箱 OTP 恢复</CardTitle>
-              <CardDescription>验证下单邮箱后，以服务端最近的匿名订单原子覆盖该邮箱的本机分组。</CardDescription>
+              <CardTitle as="h2" class="text-base">忘记订单号？用邮箱找回</CardTitle>
+              <CardDescription>我们会向下单邮箱发送验证码，验证后把该邮箱最近的订单同步到这台设备。</CardDescription>
             </CardHeader>
             <VeeForm v-slot="{ isSubmitting: recoverySubmitting }" as="form" novalidate :validation-schema="recoverySchema" @submit="submitRecovery">
               <CardContent>
@@ -101,7 +101,7 @@
 
               <div v-if="result.deliveries.length" class="min-w-0 border-t pt-6">
                 <p class="mb-3 font-medium">发货内容</p>
-                <pre class="max-h-96 overflow-auto whitespace-pre-wrap break-all rounded-md border bg-muted/50 p-4 font-mono text-xs leading-6">{{ result.deliveries.join("\n") }}</pre>
+                <DeliveryContents :items="result.deliveries" />
               </div>
               <Alert v-else-if="result.paymentStatus === 'PAID'">
                 <AlertTitle>等待发货</AlertTitle>
@@ -116,8 +116,8 @@
           <Card v-else class="h-full w-full overflow-hidden lg:flex lg:min-h-0 lg:flex-col">
             <CardHeader class="border-b">
               <CardDescription>选择或查询订单</CardDescription>
-              <CardTitle class="text-xl">匿名订单列表</CardTitle>
-              <p class="text-sm leading-6 text-muted-foreground">本机保存的订单按下单邮箱分组。选择订单后可查看详情或继续支付。</p>
+              <CardTitle as="h2" class="text-xl">本机订单</CardTitle>
+              <p class="text-sm leading-6 text-muted-foreground">在这台设备上下过的订单会保存在这里，按下单邮箱分组；点开可查看详情或继续支付。</p>
             </CardHeader>
             <CardContent v-if="guestGroups.length" class="min-h-0 overflow-hidden p-0 lg:flex-1">
               <OrderList :groups="guestGroups.map(group => ({ key: group.email, title: group.email, orders: group.orders }))" :on-select="(item, email) => openGuestOrder(email, item as LocalOrder)" :on-delete-group="requestClearGuestOrders" />
@@ -125,8 +125,8 @@
             <CardContent v-else class="grid min-h-64 place-items-center p-8 text-center lg:flex-1">
               <div class="max-w-sm">
                 <SearchIcon class="mx-auto size-8 text-muted-foreground" />
-                <h2 class="mt-4 font-medium">暂无本机匿名订单</h2>
-                <p class="mt-2 text-sm leading-6 text-muted-foreground">请使用左侧表单按订单号和下单邮箱查询，或通过邮箱 OTP 恢复订单记录。</p>
+                <h3 class="mt-4 font-medium">这台设备上还没有订单</h3>
+                <p class="mt-2 text-sm leading-6 text-muted-foreground">可以用订单号和下单邮箱查询，或用邮箱验证码找回订单记录。</p>
               </div>
             </CardContent>
             <CardFooter v-if="guestGroups.length" class="justify-end border-t pt-5">
@@ -166,6 +166,7 @@ import { z } from "zod";
 
 import OrderList from "@/components/storefront/OrderList.vue";
 import StoreShell from "@/components/storefront/StoreShell.vue";
+import DeliveryContents from "@/components/storefront/DeliveryContents.vue";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

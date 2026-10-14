@@ -23,10 +23,10 @@ export default {
     home: "首页", allProducts: "全部商品", search: "搜索", searchTitle: "搜索商品", searchPlaceholder: "输入商品名称或关键词", searchSubmit: "搜索", searchHint: "按回车查看全部结果", searchResults: "搜索结果", searchEmpty: "没有找到相关商品，换个关键词试试。", popular: "热门分类", featured: "推荐商品", viewAll: "查看全部", menu: "菜单", openMenu: "打开菜单", closeMenu: "关闭菜单", close: "关闭", clearSearch: "清除搜索", prev: "上一个", next: "下一个",
     heroEyebrow: "自动发货 · 即买即用", heroTitle: "数字商品，\n下单即可到手。", heroText: "精选数字商品，付款成功后自动发货，订单凭邮箱与订单号随时可查。", heroCta: "浏览商品", heroSecondary: "查询订单",
     sortLabel: "排序", sortDefault: "默认排序", sortPriceAsc: "价格从低到高", sortPriceDesc: "价格从高到低", resultCount: "共 {count} 件商品",
-    from: "起", buyNow: "立即购买", viewDetails: "查看详情", soldOut: "已售罄", lowStock: "仅剩 {count} 件", inStockReady: "有货，付款后自动发货",
+    from: "起", buyNow: "立即购买", viewDetails: "查看详情", soldOut: "已售罄", lowStock: "仅剩 {count} 件", inStockReady: "有货，付款后自动发货", inStockManual: "有货，付款后人工发货",
     services: { autoTitle: "自动发货", autoText: "付款成功后自动发送卡密", secureTitle: "安全支付", secureText: "支付回调验签，订单可追溯", lookupTitle: "订单可查", lookupText: "凭订单号与邮箱随时查询", supportTitle: "售后支持", supportText: "遇到问题可联系客服" },
     product: { breadcrumb: "商品", chooseSku: "选择规格", selected: "已选", quantityDecrease: "减少数量", quantityIncrease: "增加数量", details: "商品详情", instructions: "购买须知", mobileBuy: "立即购买", total: "合计", contact: "联系方式", payment: "支付方式", extras: "优惠与备注", secure: "支付信息由支付平台处理，本站不保存银行卡信息" },
-    footerShop: "商城", footerHelp: "帮助", footerAccount: "账户", backToTop: "回到顶部", poweredBy: "Powered by MioKey",
+    skipToContent: "跳到主要内容", copy: "复制", copyAll: "复制全部", copied: "已复制", copyFailed: "复制失败，请长按手动复制", deliveryItem: "第 {index} 项", footerShop: "商城", footerHelp: "帮助", footerAccount: "账户", backToTop: "回到顶部", poweredBy: "Powered by MioKey",
   },
   storefront: {
     fallbackSubtitle: "选择商品后进入结算流程",

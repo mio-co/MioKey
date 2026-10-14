@@ -2,7 +2,7 @@
   <AuthShell>
     <Card class="w-full max-w-md">
       <CardHeader>
-        <CardTitle>{{ messages.auth.resetPassword.title }}</CardTitle>
+        <CardTitle as="h1">{{ messages.auth.resetPassword.title }}</CardTitle>
         <CardDescription>{{ messages.auth.resetPassword.description }}</CardDescription>
       </CardHeader>
 

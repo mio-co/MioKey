@@ -1,5 +1,6 @@
 <template>
   <AuthShell>
+    <h1 v-if="!rootInitialized || !registrationEnabled" class="sr-only">{{ messages.auth.signup.title }}</h1>
     <Alert v-if="!rootInitialized" class="w-full max-w-md">
       <AlertTitle>{{ messages.auth.signup.unavailable }}</AlertTitle>
       <AlertDescription>{{ messages.auth.signup.notInitialized }}</AlertDescription>
@@ -12,7 +13,7 @@
 
     <Card v-else class="w-full max-w-md">
       <CardHeader>
-        <CardTitle>{{ messages.auth.signup.title }}</CardTitle>
+        <CardTitle as="h1">{{ messages.auth.signup.title }}</CardTitle>
         <CardDescription>{{ messages.auth.signup.description }}</CardDescription>
       </CardHeader>
       <form novalidate @submit.prevent="submit">

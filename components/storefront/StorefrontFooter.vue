@@ -7,32 +7,32 @@
       </div>
       <div>
         <p class="mk-display text-[15px]">{{ messages.shop.footerShop }}</p>
-        <ul class="mt-4 grid gap-2.5 text-sm text-muted-foreground">
-          <li><a href="/" class="mk-link hover:text-foreground">{{ messages.shop.home }}</a></li>
-          <li><a href="/#products" class="mk-link hover:text-foreground">{{ messages.shop.allProducts }}</a></li>
+        <ul class="mt-2 grid text-sm text-muted-foreground md:mt-4 md:gap-2.5">
+          <li><a href="/" class="mk-link inline-flex min-h-11 items-center hover:text-foreground md:min-h-0">{{ messages.shop.home }}</a></li>
+          <li><a href="/#products" class="mk-link inline-flex min-h-11 items-center hover:text-foreground md:min-h-0">{{ messages.shop.allProducts }}</a></li>
         </ul>
       </div>
       <div>
         <p class="mk-display text-[15px]">{{ messages.shop.footerHelp }}</p>
-        <ul class="mt-4 grid gap-2.5 text-sm text-muted-foreground">
-          <li><a href="/order" class="mk-link hover:text-foreground">{{ messages.nav.orderLookup }}</a></li>
+        <ul class="mt-2 grid text-sm text-muted-foreground md:mt-4 md:gap-2.5">
+          <li><a href="/order" class="mk-link inline-flex min-h-11 items-center hover:text-foreground md:min-h-0">{{ messages.nav.orderLookup }}</a></li>
           <li v-for="contact in supportContacts" :key="`${contact.label}-${contact.href}`">
-            <a :href="contact.href" class="mk-link inline-flex items-center gap-1.5 hover:text-foreground" target="_blank" rel="noopener noreferrer"><HeadphonesIcon class="size-3.5" />{{ contact.label }}</a>
+            <a :href="contact.href" class="mk-link inline-flex min-h-11 items-center gap-1.5 hover:text-foreground md:min-h-0" target="_blank" rel="noopener noreferrer"><HeadphonesIcon class="size-3.5" />{{ contact.label }}</a>
           </li>
         </ul>
       </div>
       <div>
         <p class="mk-display text-[15px]">{{ messages.shop.footerAccount }}</p>
-        <ul class="mt-4 grid gap-2.5 text-sm text-muted-foreground">
-          <li><a href="/account/order" class="mk-link hover:text-foreground">{{ messages.nav.myOrders }}</a></li>
-          <li><a href="/account" class="mk-link hover:text-foreground">{{ messages.nav.accountSettings }}</a></li>
+        <ul class="mt-2 grid text-sm text-muted-foreground md:mt-4 md:gap-2.5">
+          <li><a href="/account/order" class="mk-link inline-flex min-h-11 items-center hover:text-foreground md:min-h-0">{{ messages.nav.myOrders }}</a></li>
+          <li><a href="/account" class="mk-link inline-flex min-h-11 items-center hover:text-foreground md:min-h-0">{{ messages.nav.accountSettings }}</a></li>
         </ul>
       </div>
     </div>
     <div class="border-t">
       <div class="mk-page flex flex-col gap-3 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>{{ messages.shop.poweredBy }}</p>
-        <button type="button" class="mk-link self-start sm:self-auto" @click="scrollToTop">{{ messages.shop.backToTop }} ↑</button>
+        <button type="button" class="mk-link inline-flex min-h-11 items-center self-start sm:min-h-0 sm:self-auto" @click="scrollToTop">{{ messages.shop.backToTop }} ↑</button>
       </div>
     </div>
   </footer>

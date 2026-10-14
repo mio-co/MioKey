@@ -7,7 +7,7 @@
     </template>
     <Card class="w-full">
       <CardHeader class="space-y-1 pb-6">
-        <CardTitle>后台登录</CardTitle>
+        <CardTitle as="h1">后台登录</CardTitle>
         <CardDescription>使用管理员邮箱和密码登录。</CardDescription>
       </CardHeader>
       <form class="grid gap-6" @submit.prevent="onSubmit">

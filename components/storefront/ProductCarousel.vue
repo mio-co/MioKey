@@ -35,28 +35,29 @@ onBeforeUnmount(stop);
   <div class="relative" role="region" aria-roledescription="carousel" :aria-label="messages.shop.featured" @mouseenter="paused = true" @mouseleave="paused = false" @focusin="paused = true" @focusout="paused = false">
     <div ref="viewport" class="overflow-hidden rounded-[24px]">
       <div class="flex touch-pan-y">
-        <a
+        <div
           v-for="(product, i) in products"
           :key="product.id"
-          :href="`/product/${product.slug}`"
-          class="group relative block min-w-0 shrink-0 grow-0 basis-full"
+          class="min-w-0 shrink-0 grow-0 basis-full"
           role="group"
           aria-roledescription="slide"
           :aria-label="`${i + 1} / ${count}`"
         >
-          <div class="relative aspect-[4/3] overflow-hidden bg-muted sm:aspect-[16/11]">
-            <img :src="product.coverImage || defaultProductImage" :alt="product.name" :loading="i === 0 ? 'eager' : 'lazy'" class="size-full object-cover transition-transform duration-[1300ms] ease-out-expo group-hover:scale-105" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-            <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 text-white sm:p-7">
-              <div class="min-w-0">
-                <p v-if="product.categoryName" class="mk-eyebrow text-white/75">{{ product.categoryName }}</p>
-                <p class="mk-h3 mt-1 line-clamp-2">{{ product.name }}</p>
-                <p class="mk-display mt-1 text-lg tabular-nums">¥{{ product.price }}</p>
+          <a :href="`/product/${product.slug}`" class="group relative block">
+            <div class="relative aspect-[4/3] overflow-hidden bg-muted sm:aspect-[16/11]">
+              <img :src="product.coverImage || defaultProductImage" :alt="product.name" :loading="i === 0 ? 'eager' : 'lazy'" class="size-full object-cover transition-transform duration-[1300ms] ease-out-expo group-hover:scale-105" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+              <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 text-white sm:p-7">
+                <div class="min-w-0">
+                  <p v-if="product.categoryName" class="mk-eyebrow text-white/75">{{ product.categoryName }}</p>
+                  <p class="mk-h3 mt-1 line-clamp-2">{{ product.name }}</p>
+                  <p class="mk-display mt-1 text-lg tabular-nums">¥{{ product.price }}</p>
+                </div>
+                <span class="grid size-12 shrink-0 place-items-center rounded-full bg-white text-black transition-transform duration-500 ease-out-expo group-hover:-rotate-45"><ChevronRightIcon class="size-5" /></span>
               </div>
-              <span class="grid size-12 shrink-0 place-items-center rounded-full bg-white text-black transition-transform duration-500 ease-out-expo group-hover:-rotate-45"><ChevronRightIcon class="size-5" /></span>
             </div>
-          </div>
-        </a>
+          </a>
+        </div>
       </div>
     </div>
     <div v-if="count > 1" class="mt-4 flex items-center justify-between gap-4">

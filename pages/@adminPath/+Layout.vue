@@ -1,10 +1,11 @@
 <template>
   <slot v-if="isLoginPage" />
   <SidebarProvider v-else class="mk-admin min-h-svh">
+    <a href="#main" class="mk-skip-link">跳到主要内容</a>
     <AdminSidebar />
     <SidebarInset class="min-w-0">
       <header class="mk-admin-topbar sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/85 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 sm:px-4 md:rounded-t-xl">
-        <SidebarTrigger class="-ml-0.5 size-10 cursor-pointer md:size-8" aria-label="切换侧栏" data-testid="admin-sidebar-trigger" />
+        <SidebarTrigger class="-ml-0.5 size-11 cursor-pointer md:size-8" aria-label="切换侧栏" data-testid="admin-sidebar-trigger" />
         <Separator orientation="vertical" class="h-4" />
         <nav class="flex min-w-0 flex-1 items-center gap-1.5 text-sm" aria-label="当前位置">
           <template v-for="(title, index) in routeMeta.titles" :key="`${index}-${title}`">
@@ -21,8 +22,8 @@
             <span class="flex-1 text-left">跳转到…</span>
             <kbd class="mk-kbd">{{ modKey }}K</kbd>
           </Button>
-          <Button variant="ghost" size="icon" class="size-10 lg:hidden" aria-label="快速跳转" @click="commandOpen = true"><SearchIcon /></Button>
-          <Button variant="ghost" size="icon" class="size-10 md:size-8" :aria-label="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'" data-testid="admin-theme-toggle" @click="toggleTheme">
+          <Button variant="ghost" size="icon" class="size-11 lg:hidden" aria-label="快速跳转" @click="commandOpen = true"><SearchIcon /></Button>
+          <Button variant="ghost" size="icon" class="size-11 md:size-8" :aria-label="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'" data-testid="admin-theme-toggle" @click="toggleTheme">
             <SunIcon v-if="theme === 'dark'" /><MoonIcon v-else />
           </Button>
           <Button variant="ghost" size="icon" class="hidden size-8 md:inline-flex" as-child>
@@ -30,7 +31,7 @@
           </Button>
         </div>
       </header>
-      <main :key="pageKey" class="mk-admin-main @container/main flex min-w-0 flex-1 flex-col p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] lg:p-6">
+      <main id="main" :key="pageKey" tabindex="-1" class="mk-admin-main outline-none @container/main flex min-w-0 flex-1 flex-col p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] lg:p-6">
         <slot />
       </main>
     </SidebarInset>

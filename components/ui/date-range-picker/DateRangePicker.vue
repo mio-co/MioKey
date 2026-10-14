@@ -49,7 +49,7 @@ function clearRange() {
 <template>
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
-      <Button type="button" variant="outline" size="sm" class="w-full justify-start text-left font-normal" :class="!selectedRange && 'text-muted-foreground'" aria-label="选择日期范围">
+      <Button type="button" variant="outline" size="sm" class="w-full justify-start text-left font-normal" :class="!selectedRange && 'text-muted-foreground'" :aria-label="selectedRange?.start ? `日期范围：${label}` : undefined">
         <CalendarIcon />
         <span class="truncate">{{ label }}</span>
       </Button>

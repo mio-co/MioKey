@@ -342,7 +342,7 @@
   /* Phones: 44px fields and buttons inside admin pages and dialogs. */
   @media (max-width: 767.98px) {
     :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="input"]:not([type="checkbox"]):not([type="file"]), [data-slot="select-trigger"]) { min-height: 2.75rem; font-size: 16px; }
-    :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) [data-slot="button"]:not([data-size^="icon"]) { min-height: 2.5rem; }
+    :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="button"], [data-slot="popover-trigger"]):not([data-size^="icon"]) { min-height: 2.75rem; }
     body:has(.mk-admin) [data-slot="dialog-content"] { max-height: calc(100dvh - 2rem); overflow-y: auto; }
   }
 }
@@ -393,3 +393,24 @@
   :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="switch"], [data-slot="checkbox"], [data-slot="radio-group-item"]) { position: relative; }
   :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="switch"], [data-slot="checkbox"], [data-slot="radio-group-item"])::after { content: ""; position: absolute; inset: -12px; }
 }
+
+/* Cycle 1: skip link (keyboard users jump past header/sidebar), admin card headers with a divider. */
+@layer components {
+  .mk-skip-link {
+    position: fixed; left: 0.75rem; top: 0.75rem; z-index: 100;
+    padding: 0.75rem 1.125rem; border-radius: 9999px;
+    background: var(--foreground); color: var(--background);
+    font-size: 0.875rem; font-weight: 600;
+    transform: translateY(calc(-100% - 1.5rem));
+    transition: transform 0.3s var(--ease-out-expo, cubic-bezier(.16,1,.3,1));
+  }
+  .mk-skip-link:focus-visible { transform: none; outline: 2px solid var(--foreground); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .mk-skip-link { transition: none; } }
+
+}
+
+/* shadcn CardHeader adds `[.border-b]:pb-6` and a second auto row; in admin dialogs/cards that use
+   `border-b py-4` this left a tall empty band under the title. Match bottom padding to the top.
+   Unlayered on purpose: the shadcn class is a utility, which beats anything in @layer components. */
+:is(.mk-admin, body:has(.mk-admin) [data-slot="dialog-content"]) [data-slot="card-header"].border-b.py-4 { padding-bottom: 1rem; }
+:is(.mk-admin, body:has(.mk-admin) [data-slot="dialog-content"]) [data-slot="card-header"].border-b:not(:has([data-slot="card-description"])) { grid-template-rows: auto; row-gap: 0; }
