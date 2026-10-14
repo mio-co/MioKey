@@ -9,7 +9,7 @@ export async function onBeforeRender(_pageContext: PageContextServer) {
     return {
       pageContext: {
         site: {
-          name: "CFFK-Shop",
+          name: "MioKey",
           subtitle: null,
           siteUrl: null,
           logo: null,

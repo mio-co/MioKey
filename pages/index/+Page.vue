@@ -1,160 +1,169 @@
 <template>
-  <main class="flex min-h-screen flex-col bg-muted/30">
-    <header class="fixed inset-x-0 top-0 z-50 border-b bg-background/95 backdrop-blur">
-      <div class="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-5">
-        <a href="/" class="flex min-w-0 items-center gap-2 font-semibold">
-          <img :src="brandLogoUrl" :alt="`${site.name} Logo`" class="size-9 shrink-0 rounded-md object-contain" />
-          <span class="truncate">{{ site.name }}</span>
-        </a>
-        <div class="flex shrink-0 items-center gap-2">
-          <PublicNav />
-        </div>
-      </div>
-    </header>
-
-    <section class="border-b bg-background pt-16">
-      <div class="mx-auto grid max-w-6xl gap-5 px-5 py-8 sm:grid-cols-[minmax(0,1fr)_22rem] sm:items-center">
-        <div v-if="site.notice" class="flex min-w-0 items-center gap-3 text-sm leading-6 text-muted-foreground">
-          <InfoIcon class="size-4 shrink-0 text-foreground" />
-          <div class="min-w-0 max-w-[28.8rem] overflow-hidden whitespace-nowrap">
-            <p v-if="!shouldMarqueeNotice" class="m-0 truncate" :title="site.notice">{{ site.notice }}</p>
-            <template v-else>
-              <p class="sr-only">{{ site.notice }}</p>
-              <div aria-hidden="true" class="notice-marquee-track inline-flex w-max animate-notice-marquee">
-                <span class="shrink-0 pr-12">{{ site.notice }}</span>
-                <span class="shrink-0 pr-12">{{ site.notice }}</span>
-              </div>
-            </template>
-          </div>
-        </div>
-        <p v-else class="text-sm text-muted-foreground">{{ site.subtitle || messages.storefront.fallbackSubtitle }}</p>
-        <div class="relative">
-          <SearchIcon class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input v-model="query" class="pl-9" :placeholder="messages.storefront.searchProducts" :aria-label="messages.storefront.searchProducts" />
-        </div>
-      </div>
-    </section>
-
-    <section class="mx-auto w-full max-w-6xl flex-1 px-5 py-10 sm:py-12">
-      <div class="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 class="text-xl font-semibold tracking-normal">{{ messages.storefront.products }}</h2>
-          <p class="mt-1 text-sm text-muted-foreground">{{ query ? t(messages.storefront.relatedProducts, { count: visibleProducts.length }) : messages.storefront.fallbackSubtitle }}</p>
-        </div>
-        <div v-if="data.categories.length" class="flex max-w-full gap-2 overflow-x-auto pb-1" :aria-label="messages.storefront.categories">
-          <Button size="sm" :variant="selectedCategory === null ? 'default' : 'outline'" @click="selectedCategory = null">{{ messages.storefront.all }}</Button>
-          <Button
-            v-for="category in data.categories"
-            :key="category.id"
-            size="sm"
-            :variant="selectedCategory === category.id ? 'default' : 'outline'"
-            @click="selectedCategory = category.id"
-          >
-            {{ category.name }}
-          </Button>
-        </div>
-      </div>
-
-      <div v-if="visibleProducts.length" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <article v-for="product in visibleProducts" :key="product.id" class="group overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-lg">
-          <a :href="`/product/${product.slug}`" class="block">
-            <div class="relative aspect-4/3 overflow-hidden bg-muted">
-              <img :src="product.coverImage || defaultProductImage" :alt="product.name" class="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
-              <Badge variant="secondary" class="absolute left-2 top-2 bg-background/90 text-xs backdrop-blur">{{ product.categoryName || messages.storefront.products }}</Badge>
-            </div>
-            <div class="flex min-h-28 flex-col p-3">
-              <h3 class="line-clamp-2 text-sm font-semibold tracking-normal">{{ product.name }}</h3>
-              <p v-if="product.subtitle" class="mt-1 line-clamp-1 text-xs text-muted-foreground">{{ product.subtitle }}</p>
-              <div class="mt-auto flex items-end justify-between gap-2 pt-3">
-                <span :class="stockClass(product)" class="text-xs">{{ stockLabel(product) }}</span>
-                <span class="shrink-0 text-lg font-semibold tabular-nums">¥{{ product.price }}</span>
-              </div>
-            </div>
+  <StoreShell :products="data.products" :categories="data.categories">
+    <!-- Hero -->
+    <section class="mk-page grid items-center gap-8 pb-10 pt-8 sm:pt-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14 lg:pb-16 lg:pt-14">
+      <div class="max-w-xl">
+        <p class="mk-eyebrow animate-fade-up text-muted-foreground">{{ messages.shop.heroEyebrow }}</p>
+        <h1 class="mt-4 animate-fade-up whitespace-pre-line text-[clamp(34px,5.2vw,64px)] font-semibold leading-[1.08] tracking-[-0.02em] [animation-delay:80ms]">{{ site.subtitle || messages.shop.heroTitle }}</h1>
+        <p class="mt-5 max-w-md animate-fade-up text-base leading-7 text-muted-foreground [animation-delay:160ms]">{{ messages.shop.heroText }}</p>
+        <div class="mt-8 flex animate-fade-up flex-wrap gap-3 [animation-delay:240ms]">
+          <a href="#products" class="mk-sweep inline-flex h-12 items-center gap-2 rounded-full bg-foreground pl-6 pr-2 text-[15px] font-semibold text-background" @click.prevent="scrollToProducts">
+            {{ messages.shop.heroCta }}
+            <span class="grid size-8 place-items-center rounded-full bg-background text-foreground"><ArrowDownIcon class="size-4" /></span>
           </a>
-        </article>
+          <a :href="user ? '/account/order' : '/order'" class="inline-flex h-12 items-center rounded-full border border-foreground/15 px-6 text-[15px] font-semibold transition-colors duration-300 hover:border-foreground hover:bg-foreground hover:text-background">{{ messages.shop.heroSecondary }}</a>
+        </div>
       </div>
-
-      <div v-else class="mt-6 border border-dashed bg-background px-6 py-16 text-center">
-        <PackageOpenIcon class="mx-auto size-8 text-muted-foreground" />
-        <h3 class="mt-4 text-base font-semibold">{{ messages.storefront.noProducts }}</h3>
-        <p class="mt-2 text-sm text-muted-foreground">{{ messages.storefront.noProductsDescription }}</p>
+      <div v-if="featured.length" class="min-w-0 animate-fade-up [animation-delay:200ms]">
+        <ProductCarousel :products="featured" />
       </div>
     </section>
 
-    <StorefrontFooter />
-  </main>
+    <!-- Service strip -->
+    <section class="border-y bg-muted/40">
+      <ul class="mk-page grid grid-cols-2 gap-x-4 gap-y-6 py-7 lg:grid-cols-4 lg:py-9">
+        <Reveal v-for="(item, index) in services" :key="item.title" as="li" :delay="index * 70" class="flex items-start gap-3">
+          <span class="grid size-11 shrink-0 place-items-center rounded-full bg-background ring-1 ring-border"><component :is="item.icon" class="size-5" /></span>
+          <span class="min-w-0">
+            <span class="mk-display block text-[15px]">{{ item.title }}</span>
+            <span class="mt-0.5 block text-[13px] leading-5 text-muted-foreground">{{ item.text }}</span>
+          </span>
+        </Reveal>
+      </ul>
+    </section>
+
+    <!-- Catalogue -->
+    <section id="products" class="mk-page mk-sec scroll-mt-20">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <Reveal>
+          <p class="mk-eyebrow text-muted-foreground">{{ messages.storefront.products }}</p>
+          <h2 class="mk-h2 mt-2">{{ query ? t(messages.storefront.relatedProducts, { count: visibleProducts.length }) : messages.shop.allProducts }}</h2>
+        </Reveal>
+        <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <div class="relative min-w-0 flex-1 sm:w-72 sm:flex-none">
+            <SearchIcon class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input v-model="query" type="search" class="pl-10!" :placeholder="messages.storefront.searchProducts" :aria-label="messages.storefront.searchProducts" />
+          </div>
+          <Select v-model="sort">
+            <SelectTrigger class="w-auto min-w-36" :aria-label="messages.shop.sortLabel"><SelectValue /></SelectTrigger>
+            <SelectContent class="rounded-2xl">
+              <SelectItem value="default">{{ messages.shop.sortDefault }}</SelectItem>
+              <SelectItem value="price-asc">{{ messages.shop.sortPriceAsc }}</SelectItem>
+              <SelectItem value="price-desc">{{ messages.shop.sortPriceDesc }}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div v-if="data.categories.length" class="sticky top-16 z-30 -mx-[var(--mk-pad)] mt-6 bg-background/85 px-[var(--mk-pad)] py-3 backdrop-blur-xl lg:top-[72px]">
+        <div class="mk-no-scrollbar flex gap-2 overflow-x-auto" role="tablist" :aria-label="messages.storefront.categories">
+          <button
+            v-for="item in categoryTabs"
+            :key="String(item.id)"
+            type="button"
+            role="tab"
+            :aria-selected="selectedCategory === item.id"
+            class="h-10 shrink-0 rounded-full border px-5 text-sm font-medium transition-colors duration-300 hover:border-foreground aria-selected:border-foreground aria-selected:bg-foreground aria-selected:text-background"
+            @click="selectCategory(item.id)"
+          >
+            {{ item.name }}<span class="ml-1.5 text-xs opacity-60 tabular-nums">{{ item.count }}</span>
+          </button>
+        </div>
+      </div>
+
+      <TransitionGroup v-if="visibleProducts.length" tag="div" name="mk-grid" class="mt-6 grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7 lg:gap-y-10 xl:grid-cols-4">
+        <Reveal v-for="(product, index) in visibleProducts" :key="product.id" :delay="(index % 4) * 70">
+          <ProductCard :product="product" :eager="index < 4" />
+        </Reveal>
+      </TransitionGroup>
+
+      <div v-else class="mt-8 grid place-items-center rounded-[24px] border border-dashed px-6 py-20 text-center">
+        <span class="grid size-14 place-items-center rounded-full bg-muted"><PackageOpenIcon class="size-6 text-muted-foreground" /></span>
+        <h3 class="mk-display mt-4 text-lg">{{ query ? messages.shop.searchEmpty : messages.storefront.noProducts }}</h3>
+        <p v-if="!query" class="mt-2 text-sm text-muted-foreground">{{ messages.storefront.noProductsDescription }}</p>
+        <Button v-else variant="outline" class="mt-5" @click="query = ''; selectedCategory = null">{{ messages.shop.clearSearch }}</Button>
+      </div>
+    </section>
+  </StoreShell>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from "vue";
-import { InfoIcon, PackageOpenIcon, SearchIcon } from "@lucide/vue";
-import logoUrl from "@/assets/logo.svg?url";
-import defaultProductImage from "@/assets/product_img.jpg?url";
+import { computed, onMounted, ref, watch } from "vue";
+import { ArrowDownIcon, HeadphonesIcon, PackageOpenIcon, ReceiptTextIcon, SearchIcon, ShieldCheckIcon, ZapIcon } from "@lucide/vue";
 import { useData } from "vike-vue/useData";
 import { usePageContext } from "vike-vue/usePageContext";
-import PublicNav from "@/components/storefront/PublicNav.vue";
-import StorefrontFooter from "@/components/storefront/StorefrontFooter.vue";
-import { Badge } from "@/components/ui/badge";
+import ProductCard from "@/components/storefront/ProductCard.vue";
+import ProductCarousel from "@/components/storefront/ProductCarousel.vue";
+import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Reveal from "@/components/storefront/Reveal.vue";
 import type { Data } from "./+data.server";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 
-type Product = Data["products"][number];
-type Site = {
-  name: string;
-  subtitle: string | null;
-  logo: string | null;
-  notice: string | null;
-
-  footerText: string | null;
-};
+type Site = { name: string; subtitle: string | null; logo: string | null; notice: string | null; footerText: string | null };
 
 const data = useData<Data>();
-const pageContext = usePageContext() as unknown as { site: Site };
+const pageContext = usePageContext() as unknown as { site: Site; user?: { id: string } | null; urlParsed: { search: Record<string, string | undefined> } };
 const site = pageContext.site;
+const user = pageContext.user ?? null;
 const { messages, t } = useStorefrontPreferences();
-const selectedCategory = ref<number | null>(null);
-const query = ref("");
-const shouldMarqueeNotice = computed(() => (site.notice?.length ?? 0) > 30);
-const brandLogoUrl = computed(() => site.logo || logoUrl);
+const initialCategory = Number(pageContext.urlParsed.search.category);
+const selectedCategory = ref<number | null>(Number.isInteger(initialCategory) && data.categories.some((item) => item.id === initialCategory) ? initialCategory : null);
+const query = ref(pageContext.urlParsed.search.q?.trim() ?? "");
+const sort = ref<"default" | "price-asc" | "price-desc">("default");
+
+const featured = computed(() => {
+  const inStock = data.products.filter((product) => product.availableStock !== 0);
+  return (inStock.length ? inStock : data.products).slice(0, 5);
+});
+const categoryTabs = computed(() => [
+  { id: null as number | null, name: messages.value.storefront.all, count: data.products.length },
+  ...data.categories.map((item) => ({ id: item.id as number | null, name: item.name, count: data.products.filter((product) => product.categoryId === item.id).length })),
+]);
+const services = computed(() => [
+  { icon: ZapIcon, title: messages.value.shop.services.autoTitle, text: messages.value.shop.services.autoText },
+  { icon: ShieldCheckIcon, title: messages.value.shop.services.secureTitle, text: messages.value.shop.services.secureText },
+  { icon: ReceiptTextIcon, title: messages.value.shop.services.lookupTitle, text: messages.value.shop.services.lookupText },
+  { icon: HeadphonesIcon, title: messages.value.shop.services.supportTitle, text: messages.value.shop.services.supportText },
+]);
 const visibleProducts = computed(() => {
   const keyword = query.value.trim().toLowerCase();
-  return data.products.filter((product) =>
+  const list = data.products.filter((product) =>
     (selectedCategory.value === null || product.categoryId === selectedCategory.value)
     && (!keyword || product.name.toLowerCase().includes(keyword) || product.subtitle?.toLowerCase().includes(keyword)),
   );
+  if (sort.value === "default") return list;
+  const direction = sort.value === "price-asc" ? 1 : -1;
+  return [...list].sort((a, b) => (Number(a.price) - Number(b.price)) * direction);
 });
 
-function stockLabel(product: Product) {
-  if (product.availableStock === null) return messages.value.storefront.stockAvailable;
-  return product.availableStock > 0
-    ? t(messages.value.storefront.stockCount, { count: product.availableStock })
-    : messages.value.storefront.outOfStock;
+function selectCategory(id: number | null) {
+  selectedCategory.value = id;
 }
-function stockClass(product: Product) {
-  return product.availableStock === 0 ? "text-orange-500" : "text-muted-foreground";
+function scrollToProducts() {
+  document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+// Keep ?q= / ?category= in the URL (shareable, survives reload) without adding history entries.
+watch([query, selectedCategory], ([q, category]) => {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (q.trim()) url.searchParams.set("q", q.trim()); else url.searchParams.delete("q");
+  if (category !== null) url.searchParams.set("category", String(category)); else url.searchParams.delete("category");
+  window.history.replaceState(window.history.state, "", url);
+});
+onMounted(() => {
+  if (window.location.hash === "#products" || query.value || selectedCategory.value !== null) {
+    requestAnimationFrame(() => document.getElementById("products")?.scrollIntoView({ block: "start" }));
+  }
+});
 </script>
 
 <style scoped>
-@keyframes notice-marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-notice-marquee {
-  animation: notice-marquee 18s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-notice-marquee {
-    animation: none;
-  }
-}
+.mk-grid-move { transition: transform 0.6s var(--ease-out-expo); }
+.mk-grid-enter-active { transition: opacity 0.45s var(--ease-out-expo), transform 0.45s var(--ease-out-expo); }
+.mk-grid-enter-from { opacity: 0; transform: translateY(12px) scale(0.98); }
+.mk-grid-leave-active { display: none; }
 </style>

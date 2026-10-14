@@ -1,4 +1,11 @@
 <template>
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
+  <!-- Pre-paint boot: enables reveal motion and applies the saved theme before first paint (no dark-mode flash). -->
+  <!-- eslint-disable-next-line vue/no-v-text-v-html-on-component, vue/no-v-html -->
+  <component :is="'script'" v-html="bootScript" />
+  <link rel="preload" href="/fonts/archivo-Medium.woff2" as="font" type="font/woff2" crossorigin="" />
+  <link rel="preload" href="/fonts/poppins-600-normal.woff2" as="font" type="font/woff2" crossorigin="" />
   <link rel="icon" :href="iconUrl" />
   <link rel="apple-touch-icon" :href="iconUrl" />
   <link v-if="seo.canonicalUrl" rel="canonical" :href="seo.canonicalUrl" />
@@ -27,6 +34,7 @@ type ProductData = { name?: string; subtitle?: string | null; description?: stri
 type SeoPageContext = { site?: Site; data?: ProductData; urlPathname?: string; routeParams?: { adminPath?: string }; urlParsed?: { origin?: string } };
 
 const pageContext = usePageContext() as SeoPageContext;
+const bootScript = "try{var d=document.documentElement;d.classList.add('mk-js');if(localStorage.getItem('storefront-theme')==='dark')d.classList.add('dark')}catch(e){}";
 const isPrivatePage = computed(() => {
   const pathname = pageContext.urlPathname || "/";
   return Boolean(pageContext.routeParams?.adminPath) || pathname === "/setup" || pathname === "/order" || pathname === "/checkout" || pathname === "/payment-result" || pathname.startsWith("/_error");
@@ -34,7 +42,7 @@ const isPrivatePage = computed(() => {
 const siteUrl = computed(() => normalizeOrigin(pageContext.site?.siteUrl) || normalizeOrigin(pageContext.urlParsed?.origin));
 const iconUrl = computed(() => pageContext.site?.logoIcon || pageContext.site?.logo || defaultLogoUrl);
 const seo = computed(() => {
-  const siteName = pageContext.site?.name || "CFFK-Shop";
+  const siteName = pageContext.site?.name || "MioKey";
   const product = pageContext.data;
   const isProductPage = Boolean(product?.name && (pageContext.urlPathname || "").startsWith("/product/"));
   const title = isProductPage ? `${product?.name} - ${siteName}` : siteName;

@@ -2,7 +2,34 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* MioKey type: Archivo (body) + Poppins (display), self-hosted from /fonts (SIL OFL 1.1).
+   CJK text falls back to the platform font so Chinese pages stay crisp. */
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/archivo-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/archivo-Medium.woff2") format("woff2"); }
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/archivo-SemiBold.woff2") format("woff2"); }
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/archivo-Bold.woff2") format("woff2"); }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/poppins-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD; }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 500; font-display: swap; src: url("/fonts/poppins-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD; }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 600; font-display: swap; src: url("/fonts/poppins-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD; }
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 700; font-display: swap; src: url("/fonts/poppins-700-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD; }
+
+@theme {
+  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+  --font-display: "Poppins", "Archivo", ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-drawer: cubic-bezier(0.7, 0, 0.2, 1);
+  --animate-fade-up: mk-fade-up 0.7s var(--ease-out-expo) both;
+  --animate-fade-in: mk-fade-in 0.4s var(--ease-out-expo) both;
+}
+
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -43,18 +70,21 @@
 }
 
 :root {
+  --radius: 0.75rem;
+  --success: oklch(0.6 0.13 160);
+  --warning: oklch(0.7 0.15 70);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.17 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.955 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.5 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -72,7 +102,7 @@
   --login-delivery-border: oklch(0.8 0.09 150);
   --login-delivery-icon: oklch(0.9 0.065 150);
   --login-delivery-icon-foreground: oklch(0.4 0.1 150);
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: oklch(0.975 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -83,7 +113,9 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --success: oklch(0.72 0.14 160);
+  --warning: oklch(0.78 0.14 75);
+  --background: oklch(0.15 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -112,7 +144,7 @@
   --login-delivery-border: oklch(0.46 0.08 150);
   --login-delivery-icon: oklch(0.29 0.055 150);
   --login-delivery-icon-foreground: oklch(0.8 0.12 150);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: oklch(0.18 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.985 0 0);
   --sidebar-primary-foreground: oklch(0.205 0 0);
@@ -121,6 +153,70 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+
+/* Storefront scope: rounder, pill-shaped controls like the Rawjoy look. */
+.mk-store {
+  --radius: 1.25rem;
+  --mk-pad: clamp(16px, calc(3.24vw + 3.4px), 50px);
+  --mk-sec: clamp(48px, calc(4.76vw + 29.4px), 98px);
+}
+.mk-store [data-slot="button"]:not(.mk-square),
+.mk-store [data-slot="input"]:not(.mk-square),
+.mk-store [data-slot="select-trigger"]:not(.mk-square),
+.mk-store [data-slot="input-group"]:not(.mk-square) { border-radius: 9999px; }
+.mk-store [data-slot="textarea"] { border-radius: 1.25rem; }
+.mk-store [data-slot="input"]:not([type="file"]),
+.mk-store [data-slot="select-trigger"] { min-height: 2.75rem; padding-inline: 1.125rem; }
+
+.mk-page { width: 100%; max-width: 1440px; margin-inline: auto; padding-inline: var(--mk-pad, 1rem); }
+.mk-sec { padding-block: var(--mk-sec, 4rem); }
+.mk-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+.mk-h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, calc(2.339vw + 10.06px), 40px); line-height: 1.2; }
+.mk-h2 { font-family: var(--font-display); font-weight: 600; font-size: clamp(22.4px, calc(1.871vw + 8.05px), 32px); line-height: 1.3125; }
+.mk-h3 { font-family: var(--font-display); font-weight: 600; font-size: clamp(19.6px, calc(1.637vw + 7.04px), 28px); line-height: 1.357; }
+.mk-eyebrow { font-family: var(--font-display); font-weight: 600; font-size: 13px; line-height: 20px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* Product card media: slow zoom on hover (1.3s expo-out), like the reference theme. */
+.mk-card-media { position: relative; overflow: hidden; border-radius: var(--radius-xl); background: var(--muted); }
+.mk-card-media img { transition: transform 1.3s var(--ease-out-expo), opacity 0.3s ease; }
+@media (hover: hover) and (pointer: fine) {
+  .mk-card:hover .mk-card-media img { transform: scale(1.05); }
+  .mk-card .mk-quick { opacity: 0; transform: translateY(15px); transition: opacity 0.35s ease, transform 0.35s ease; }
+  .mk-card:hover .mk-quick, .mk-card:focus-within .mk-quick { opacity: 1; transform: none; }
+}
+@media (hover: none) { .mk-card .mk-quick { display: none; } }
+
+/* Pill button with a fill that sweeps in from the left on hover. */
+.mk-sweep { position: relative; isolation: isolate; overflow: hidden; }
+.mk-sweep::before { content: ""; position: absolute; inset: 0; width: 0; border-radius: inherit; background: currentColor; opacity: 0.12; z-index: -1; transition: width 0.45s var(--ease-out-expo); }
+@media (hover: hover) and (pointer: fine) { .mk-sweep:hover::before { width: 100%; } }
+
+/* Underline that grows from the left. */
+.mk-link { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size 0.45s var(--ease-out-expo); }
+.mk-link:hover, .mk-link[aria-current="page"] { background-size: 100% 1px; }
+
+.mk-no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.mk-no-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes mk-fade-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes mk-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mk-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.mk-marquee { display: flex; width: max-content; animation: mk-marquee var(--mk-marquee-dur, 30s) linear infinite; }
+.mk-marquee:hover { animation-play-state: paused; }
+
+/* Scroll reveal (see lib/ui/reveal.ts). Content stays visible without JS. */
+.mk-js .mk-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo); transition-delay: var(--mk-delay, 0ms); }
+.mk-js .mk-reveal.is-in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-marquee { animation: none; }
+  .mk-js .mk-reveal { opacity: 1; transform: none; transition: none; }
+  .mk-card-media img, .mk-sweep::before, .mk-link { transition: none; }
+}
+
+/* Smooth theme switching without animating every element on first paint. */
+.mk-theme-transition, .mk-theme-transition * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important; }
 
 .product-rich-content {
   overflow-wrap: anywhere;
@@ -141,7 +237,11 @@
     @apply border-border;
   }
 
+  html { -webkit-tap-highlight-color: transparent; }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    text-rendering: optimizeLegibility;
   }
+  h1, h2, h3, h4 { font-family: var(--font-display); }
+  ::selection { background: color-mix(in oklab, var(--foreground) 85%, transparent); color: var(--background); }
 }

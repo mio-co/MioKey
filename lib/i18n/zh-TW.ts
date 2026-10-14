@@ -15,6 +15,7 @@ export default {
   ...base,
   languageName: "繁體中文",
   nav: { ...zhCN.nav, main: "主導覽", myOrders: "我的訂單", orderLookup: "訂單查詢", signIn: "登入", accountMenu: "{name} 的帳戶選單", account: "帳戶", accountSettings: "帳戶設定", signingOut: "登出中...", signOut: "登出", signOutFailed: "登出失敗，請稍後再試。", signedOut: "已登出。" },
+  shop: { ...base.shop, heroTitle: "數位商品，\n下單即可到手。", searchPlaceholder: "輸入商品名稱或關鍵字", searchEmpty: "沒有找到相關商品，換個關鍵字試試。", openMenu: "開啟選單", closeMenu: "關閉選單", menu: "選單", footerShop: "商城", poweredBy: "Powered by MioKey" },
   preferences: { language: "語言", theme: "主題", light: "淺色", dark: "深色" },
   storefront: { ...zhCN.storefront, fallbackSubtitle: "選擇商品後進入結帳流程", searchProducts: "搜尋商品名稱或關鍵字", products: "商品", relatedProducts: "找到 {count} 件相關商品", categories: "商品分類", all: "全部", stockAvailable: "庫存充足", stockCount: "庫存 {count}", outOfStock: "暫時缺貨", noProducts: "暫無可購買商品", noProductsDescription: "商品上架後會顯示在這裡。", contactSupport: "聯絡客服" },
   auth: {

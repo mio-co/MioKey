@@ -9,3 +9,7 @@
 *.bmp  -text -eol
 *.ico  -text -eol
 *.svg  -text -eol
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary

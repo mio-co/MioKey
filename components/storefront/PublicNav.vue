@@ -1,24 +1,19 @@
 <template>
-  <nav class="flex shrink-0 items-center gap-1" :aria-label="messages.nav.main">
-    <template v-if="user">
-      <Button size="sm" variant="ghost" as-child><a href="/account/order"><ClipboardListIcon data-icon="inline-start" />{{ messages.nav.myOrders }}</a></Button>
-    </template>
-    <template v-else>
-      <a class="pr-2" href="/order">{{ messages.nav.orderLookup }}</a>
-    </template>
+  <nav class="flex shrink-0 items-center gap-0.5 sm:gap-1" :aria-label="messages.nav.main">
+    <a v-if="user" href="/account/order" class="mk-link mr-2 hidden py-1 text-sm font-medium lg:inline-block">{{ messages.nav.myOrders }}</a>
+    <a v-else href="/order" class="mk-link mr-2 hidden py-1 text-sm font-medium lg:inline-block">{{ messages.nav.orderLookup }}</a>
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
-        <Button type="button" variant="ghost" size="icon" :aria-label="messages.preferences.language" :title="messages.preferences.language">
+        <Button type="button" variant="ghost" size="icon" class="hidden rounded-full md:inline-flex" :aria-label="messages.preferences.language" :title="messages.preferences.language">
           <LanguagesIcon />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" :side-offset="8" class="w-36">
-        <DropdownMenuLabel>{{ messages.preferences.language }}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+      <DropdownMenuContent align="end" :side-offset="10" class="w-40 rounded-2xl p-1.5">
+        <DropdownMenuLabel class="text-xs text-muted-foreground">{{ messages.preferences.language }}</DropdownMenuLabel>
         <DropdownMenuGroup>
-          <DropdownMenuItem @select="setLocale('zh-CN')">{{ zhCN.languageName }}</DropdownMenuItem>
-          <DropdownMenuItem @select="setLocale('zh-TW')">{{ zhTW.languageName }}</DropdownMenuItem>
-          <DropdownMenuItem @select="setLocale('en-US')">{{ enUS.languageName }}</DropdownMenuItem>
+          <DropdownMenuItem class="rounded-xl" @select="setLocale('zh-CN')">{{ zhCN.languageName }}</DropdownMenuItem>
+          <DropdownMenuItem class="rounded-xl" @select="setLocale('zh-TW')">{{ zhTW.languageName }}</DropdownMenuItem>
+          <DropdownMenuItem class="rounded-xl" @select="setLocale('en-US')">{{ enUS.languageName }}</DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -26,29 +21,33 @@
       type="button"
       variant="ghost"
       size="icon"
+      class="hidden rounded-full md:inline-flex"
       :aria-label="theme === 'light' ? messages.preferences.dark : messages.preferences.light"
       :title="theme === 'light' ? messages.preferences.dark : messages.preferences.light"
       @click="setTheme(theme === 'light' ? 'dark' : 'light')"
     >
-      <SunIcon v-if="theme === 'light'" />
-      <MoonIcon v-else />
+      <Transition name="mk-icon" mode="out-in">
+        <SunIcon v-if="theme === 'light'" key="sun" />
+        <MoonIcon v-else key="moon" />
+      </Transition>
     </Button>
     <template v-if="!user">
-      <Button size="sm" as-child><a href="/login">{{ messages.nav.signIn }}</a></Button>
+      <Button size="sm" class="ml-1 h-9 rounded-full px-4 sm:px-5" as-child><a href="/login">{{ messages.nav.signIn }}</a></Button>
     </template>
     <template v-else>
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
-          <Button type="button" variant="ghost" size="icon" class="rounded-full" :aria-label="t(messages.nav.accountMenu, { name: currentUserName })">
-            <Avatar class="size-8"><AvatarFallback>{{ userInitials }}</AvatarFallback></Avatar>
+          <Button type="button" variant="ghost" size="icon" class="ml-1 rounded-full" :aria-label="t(messages.nav.accountMenu, { name: currentUserName })">
+            <Avatar class="size-8 ring-1 ring-border"><AvatarFallback class="bg-foreground text-xs font-semibold text-background">{{ userInitials }}</AvatarFallback></Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" :side-offset="8" class="w-48">
-          <DropdownMenuLabel>{{ currentUserName }}</DropdownMenuLabel>
+        <DropdownMenuContent align="end" :side-offset="10" class="w-56 rounded-2xl p-1.5">
+          <DropdownMenuLabel class="truncate">{{ currentUserName }}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem as-child><a href="/account"><UserRoundCogIcon data-icon="inline-start" />{{ messages.nav.accountSettings }}</a></DropdownMenuItem>
-            <DropdownMenuItem :disabled="signingOut" @select="signOut"><LogOutIcon data-icon="inline-start" />{{ signingOut ? messages.nav.signingOut : messages.nav.signOut }}</DropdownMenuItem>
+            <DropdownMenuItem class="rounded-xl" as-child><a href="/account/order"><ClipboardListIcon data-icon="inline-start" />{{ messages.nav.myOrders }}</a></DropdownMenuItem>
+            <DropdownMenuItem class="rounded-xl" as-child><a href="/account"><UserRoundCogIcon data-icon="inline-start" />{{ messages.nav.accountSettings }}</a></DropdownMenuItem>
+            <DropdownMenuItem class="rounded-xl" :disabled="signingOut" @select="signOut"><LogOutIcon data-icon="inline-start" />{{ signingOut ? messages.nav.signingOut : messages.nav.signOut }}</DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -98,3 +97,9 @@ async function signOut() {
   }
 }
 </script>
+
+<style scoped>
+.mk-icon-enter-active, .mk-icon-leave-active { transition: opacity 0.2s ease, transform 0.35s var(--ease-out-expo); }
+.mk-icon-enter-from { opacity: 0; transform: rotate(-60deg) scale(0.6); }
+.mk-icon-leave-to { opacity: 0; transform: rotate(60deg) scale(0.6); }
+</style>

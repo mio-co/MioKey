@@ -1,0 +1,19 @@
+MioKey
+Copyright 2026 mio-co and MioKey contributors
+
+This product is a modified version of CFFK
+(https://github.com/34892002/cffk), Copyright 2026 34892002 (ggyy) and the
+CFFK contributors, licensed under the Apache License, Version 2.0.
+
+Modifications made by MioKey (see git history from the "MioKey" commits on):
+  - Storefront and admin user interface redesigned (layout, styling,
+    interaction and responsive behaviour).
+  - CFFK name, logo and links replaced with MioKey branding.
+  - Server-side business logic (payment, orders, card delivery, auth,
+    database schema, supplier sync, scheduled tasks) is inherited from CFFK.
+
+Bundled fonts (public/fonts):
+  - Archivo, Copyright 2019 The Archivo Project Authors, SIL Open Font License 1.1
+    (see public/fonts/Archivo-OFL.txt).
+  - Poppins, Copyright 2020 The Poppins Project Authors (Indian Type Foundry),
+    SIL Open Font License 1.1 (https://openfontlicense.org).

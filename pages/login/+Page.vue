@@ -64,7 +64,7 @@ import logoUrl from "@/assets/logo.svg?url";
 type Site = { name?: string | null; logo?: string | null };
 const pageContext = usePageContext() as ReturnType<typeof usePageContext> & { site?: Site | null };
 const { messages } = useStorefrontPreferences();
-const siteName = computed(() => pageContext.site?.name?.trim() || "CFFK-Shop");
+const siteName = computed(() => pageContext.site?.name?.trim() || "MioKey");
 const brandLogoUrl = computed(() => pageContext.site?.logo || logoUrl);
 
 const turnstileElement = ref<HTMLElement | null>(null);

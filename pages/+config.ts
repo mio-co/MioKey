@@ -5,7 +5,7 @@ import vikeVue from "vike-vue/config";
 // https://vike.dev/config
 
 const config: Config = {
-  title: "CFFK-Shop",
+  title: "MioKey",
   description: "",
 
   passToClient: ["user", "site", "rootInitialized", "registrationEnabled"],

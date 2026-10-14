@@ -17,7 +17,7 @@
                 <VeeField v-slot="{ componentField, errors }" name="siteName" :validate-on-input="true">
                   <Field :data-invalid="errors.length > 0">
                     <FieldLabel for="site-name">站点名称</FieldLabel>
-                    <Input id="site-name" v-bind="componentField" autocomplete="organization" placeholder="例如：CFFK-Shop" :aria-invalid="errors.length > 0" />
+                    <Input id="site-name" v-bind="componentField" autocomplete="organization" placeholder="例如：MioKey" :aria-invalid="errors.length > 0" />
                     <FieldError v-if="errors.length" :errors="errors" />
                   </Field>
                 </VeeField>
@@ -122,7 +122,7 @@
                 <VeeField v-slot="{ componentField, errors }" name="footerText" :validate-on-input="true">
                   <Field :data-invalid="errors.length > 0">
                     <FieldLabel for="site-footer-text">页脚文案</FieldLabel>
-                    <Textarea id="site-footer-text" v-bind="componentField" rows="3" placeholder="例如：© 2026 CFFK 版权所有" :aria-invalid="errors.length > 0" />
+                    <Textarea id="site-footer-text" v-bind="componentField" rows="3" placeholder="例如：© 2026 MioKey 版权所有" :aria-invalid="errors.length > 0" />
                     <FieldError v-if="errors.length" :errors="errors" />
                   </Field>
                 </VeeField>
@@ -259,7 +259,7 @@ type FormValues = {
 const timezones = SITE_TIMEZONES.map((value) => ({ value, label: value }));
 
 const initialValues: FormValues = {
-  siteName: "CFFK-Shop",
+  siteName: "MioKey",
   siteUrl: "",
   siteSubtitle: "",
   logo: "",

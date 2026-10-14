@@ -1,4 +1,4 @@
-name: Update CFFK
+name: Update MioKey
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: update-cffk
+  group: update-miokey
   cancel-in-progress: false
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
             cp wrangler.jsonc "$RUNNER_TEMP/wrangler.current.jsonc"
           fi
 
-          git fetch https://github.com/34892002/cffk.git main
+          git fetch https://github.com/mio-co/MioKey.git main
           git reset --hard FETCH_HEAD
           upstream_sha="$(git rev-parse --short HEAD)"
 
@@ -38,14 +38,14 @@ jobs:
             cp "$RUNNER_TEMP/wrangler.current.jsonc" wrangler.jsonc
           fi
 
-          git config user.name "CFFK Updater"
+          git config user.name "MioKey Updater"
           git config user.email "actions@github.com"
 
           if git diff --quiet; then
-            echo "CFFK is already up to date."
+            echo "MioKey is already up to date."
           else
             git add -A
-            git commit -m "Update CFFK to ${upstream_sha}"
+            git commit -m "Update MioKey to ${upstream_sha}"
           fi
 
           git push --force-with-lease origin "HEAD:${GITHUB_REF_NAME}"

@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "cffk",
+  "name": "miokey",
   "compatibility_date": "2026-03-12",
   "main": "vike:server-entry",
   "send_email": [
