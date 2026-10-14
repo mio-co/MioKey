@@ -176,14 +176,21 @@ describe("admin sign-in does not reveal accounts", () => {
   // One shared object, so a test can switch Turnstile on by setting its keys.
   const authEnv: Record<string, string> = { BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0123" };
 
-  async function signIn(database: D1Database, email: string, admin: boolean, password = "wrong-password"): Promise<RawResponse> {
+  type SignInExtras = { body?: Record<string, unknown>; headers?: Record<string, string>; form?: boolean };
+
+  async function signIn(database: D1Database, email: string, admin: boolean, password = "wrong-password", extras: SignInExtras = {}): Promise<RawResponse> {
     mock.module("cloudflare:workers", () => ({ env: authEnv }));
     const { betterAuthHandler } = await import("../../server/better-auth-handler");
     const handler = betterAuthHandler as unknown as (request: Request, context: unknown, runtime: unknown) => Promise<Response>;
+    const fields = { email, password, ...extras.body };
     const request = new Request("https://shop.example/api/auth/sign-in/email", {
       method: "POST",
-      headers: { "content-type": "application/json", ...(admin ? { "x-cffk-admin-login": "1" } : {}) },
-      body: JSON.stringify({ email, password }),
+      headers: {
+        "content-type": extras.form ? "application/x-www-form-urlencoded" : "application/json",
+        ...(admin ? { "x-cffk-admin-login": "1" } : {}),
+        ...extras.headers,
+      },
+      body: extras.form ? new URLSearchParams(Object.entries(fields).map(([key, value]) => [key, String(value)])).toString() : JSON.stringify(fields),
     });
     const started = performance.now();
     const response = await handler(request, {}, { runtime: "workerd", env: { DB: database } });
@@ -278,6 +285,103 @@ describe("admin sign-in does not reveal accounts", () => {
       context.close();
     }
   }, 60_000);
+
+  // Requests Better Auth answers itself before its password check: the body schema (endpoint
+  // validation) and the form CSRF / origin middleware run after hooks.before, so the guard must
+  // leave them alone. Each entry names the error Better Auth gives every account.
+  // `strict` is the answer once origin checks are on, when Better Auth's router-level
+  // originCheckMiddleware (which runs before hooks.before) answers first.
+  const prePasswordCases: { name: string; extras: SignInExtras; status: number; code: string; strict?: { status: number; code?: string } }[] = [
+    { name: "rememberMe: \"x\"", extras: { body: { rememberMe: "x" } }, status: 400, code: "VALIDATION_ERROR" },
+    { name: "callbackURL: 123", extras: { body: { callbackURL: 123 } }, status: 400, code: "VALIDATION_ERROR", strict: { status: 400 } },
+    { name: "untrusted callbackURL", extras: { body: { callbackURL: "https://evil.example/x" } }, status: 401, code: "INVALID_EMAIL_OR_PASSWORD", strict: { status: 403, code: "INVALID_CALLBACK_URL" } },
+    { name: "form body with rememberMe=true", extras: { form: true, body: { rememberMe: true } }, status: 400, code: "VALIDATION_ERROR" },
+    { name: "untrusted Origin with a cookie", extras: { headers: { origin: "https://evil.example", cookie: "a=b" } }, status: 403, code: "INVALID_ORIGIN" },
+    { name: "untrusted Origin without a cookie", extras: { headers: { origin: "https://evil.example" } }, status: 403, code: "INVALID_ORIGIN" },
+    { name: "untrusted Referer without a cookie", extras: { headers: { referer: "https://evil.example/login" } }, status: 403, code: "INVALID_ORIGIN" },
+    { name: "cross-site navigation", extras: { headers: { "sec-fetch-site": "cross-site", "sec-fetch-mode": "navigate" } }, status: 403, code: "CROSS_SITE_NAVIGATION_LOGIN_BLOCKED" },
+    { name: "Fetch Metadata without an Origin", extras: { headers: { "sec-fetch-site": "same-origin", "sec-fetch-mode": "cors" } }, status: 403, code: "MISSING_OR_NULL_ORIGIN" },
+    { name: "cookie without an Origin", extras: { headers: { cookie: "a=b" } }, status: 403, code: "MISSING_OR_NULL_ORIGIN" },
+  ];
+  const accounts = ["root@example.com", "member@example.com", "nobody@example.com", "off@example.com"];
+
+  // bun test sets NODE_ENV=test, which makes Better Auth skip its origin checks; production
+  // runs them. Turn them on the way a deployment has them.
+  async function withOriginChecks<T>(run: () => Promise<T>): Promise<T> {
+    mock.module("cloudflare:workers", () => ({ env: authEnv }));
+    const authModule = await import("../../server/better-auth");
+    const original = authModule.getAuthConfig;
+    const spy = spyOn(authModule, "getAuthConfig").mockImplementation((...args: Parameters<typeof original>) => {
+      const config = original(...args);
+      return { ...config, advanced: { ...config.advanced, disableOriginCheck: false } };
+    });
+    try {
+      return await run();
+    } finally {
+      spy.mockRestore();
+    }
+  }
+
+  async function expectUniform(database: D1Database, entry: (typeof prePasswordCases)[number], expectedStatus: number, expectedCode: string | undefined) {
+    const responses: { label: string; response: RawResponse }[] = [];
+    for (const admin of [true, false]) {
+      for (const email of accounts) {
+        responses.push({ label: `${admin ? "admin" : "public"} ${email}`, response: await signIn(database, email, admin, "wrong-password", entry.extras) });
+      }
+    }
+    const first = responses[0]!.response;
+    assert.equal(first.status, expectedStatus, `${entry.name}: ${first.text}`);
+    assert.equal(JSON.parse(first.text).code, expectedCode, `${entry.name}: ${first.text}`);
+    for (const { label, response } of responses.slice(1)) {
+      assert.deepEqual(visible(response), visible(first), `${entry.name}: ${label} differs from admin root`);
+    }
+  }
+
+  test("malformed optional fields get the same answer for root, member, unknown and disabled accounts on both paths", async () => {
+    const context = await seedAccounts();
+    try {
+      for (const entry of prePasswordCases.filter((item) => item.status === 400)) {
+        await expectUniform(context.database, entry, entry.status, entry.code);
+      }
+    } finally {
+      context.close();
+    }
+  }, 90_000);
+
+  test("with origin checks on, every Better Auth pre-password check gets the same answer for every account on both paths", async () => {
+    const context = await seedAccounts();
+    try {
+      await withOriginChecks(async () => {
+        for (const entry of prePasswordCases) {
+          const expected = entry.strict ?? entry;
+          await expectUniform(context.database, entry, expected.status, expected.code);
+        }
+      });
+    } finally {
+      context.close();
+    }
+  }, 90_000);
+
+  test("with origin checks on, a trusted same-origin request is still guarded", async () => {
+    const context = await seedAccounts();
+    try {
+      await withOriginChecks(async () => {
+        const trusted = { headers: { origin: "https://shop.example", cookie: "a=b", "sec-fetch-site": "same-origin", "sec-fetch-mode": "cors" } };
+        // Root on the admin path reaches Better Auth's password check and gets its wrong-password answer.
+        const real = await signIn(context.database, "root@example.com", true, "wrong-password", trusted);
+        assert.equal(real.status, 401, real.text);
+        assert.equal(JSON.parse(real.text).code, "INVALID_EMAIL_OR_PASSWORD");
+        // Root with the right password on the public path is still turned away by the guard.
+        const guarded = await signIn(context.database, "root@example.com", false, "correct-password", trusted);
+        assert.deepEqual(visible(guarded), visible(real));
+        for (const [email, admin] of [["member@example.com", true], ["nobody@example.com", true], ["off@example.com", true], ["off@example.com", false]] as const) {
+          assert.deepEqual(visible(await signIn(context.database, email, admin, "wrong-password", trusted)), visible(real), `${admin ? "admin" : "public"} ${email}`);
+        }
+      });
+    } finally {
+      context.close();
+    }
+  }, 90_000);
 });
 
 describe("error classification", () => {

@@ -2,7 +2,7 @@ import { env } from "./env";
 import { getTurnstileConfig } from "@/lib/turnstile-config";
 import type { RuntimeAdapter } from "@universal-middleware/core";
 import { BASE_ERROR_CODES, betterAuth, type BetterAuthOptions } from "better-auth";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, formCsrfMiddleware, signInEmail } from "better-auth/api";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -23,6 +23,9 @@ type AuthConfigOptions = {
 const REGISTRATION_DISABLED_MESSAGE = "本站还未开启注册功能，如需帮助请联系客服。";
 const EMAIL_CHANGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const EMAIL_CHANGE_RESEND_INTERVAL_MS = 60 * 1000;
+// Better Auth's own /sign-in/email body schema, so the guard below accepts exactly the bodies
+// the endpoint accepts, including fields Better Auth adds later.
+const SIGN_IN_EMAIL_BODY = signInEmail().options.body;
 
 export function getAuthConfig(runtime?: RuntimeAdapter, publicOrigin?: string, options: AuthConfigOptions = {}): BetterAuthOptions {
   const runtimeEnv = (runtime && "env" in runtime ? runtime.env : undefined) as AuthRuntimeEnv | undefined;
@@ -98,13 +101,24 @@ export function getAuthConfig(runtime?: RuntimeAdapter, publicOrigin?: string, o
       before: createAuthMiddleware(async (ctx) => {
         const database = runtimeEnv?.DB;
         if (ctx.path === "/sign-in/email") {
-          // Runs after Better Auth's rate limiter and plugin onRequest (captcha), and
-          // before the endpoint's own body validation. Anything Better Auth would reject
-          // on its own (non-string fields, an email failing its z.email() check) is left
-          // to it, so every account gets the same answer.
-          const email: unknown = ctx.body?.email;
-          const password: unknown = ctx.body?.password;
-          if (typeof email !== "string" || typeof password !== "string" || !z.email().safeParse(email).success) return;
+          // Runs after Better Auth's router checks (rate limiter, plugin onRequest such as
+          // captcha, body media type, originCheckMiddleware) but before the endpoint's own
+          // checks. The guard only rejects when the endpoint would reach its password check;
+          // anything it answers first is left to it, so every account gets the same answer:
+          // 1. body schema validation,
+          // 2. formCsrfMiddleware (Fetch Metadata / Origin / Referer against trustedOrigins),
+          // 3. emailAndPassword.enabled,
+          // 4. z.email() on the email.
+          const body = SIGN_IN_EMAIL_BODY.safeParse(ctx.body ?? {});
+          if (!body.success) return;
+          try {
+            await formCsrfMiddleware(ctx);
+          } catch {
+            return;
+          }
+          if (!ctx.context.options.emailAndPassword?.enabled) return;
+          const { email, password } = body.data;
+          if (!z.email().safeParse(email).success) return;
           const isAdminLogin = ctx.headers?.get("x-cffk-admin-login") === "1";
           // Same lookup as Better Auth's findUserByEmail: lower-case only, no trim.
           const [account] = await getDrizzleDb(runtime)
