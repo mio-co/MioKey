@@ -115,3 +115,51 @@ Demo orders in local D1; local EPAY enabled with fake gateway pay.example.com (b
 - axe：手机前台 7 页 0 违规；后台（桌面+手机各 16 页）只剩 `heading-order`（moderate，6 页：CardTitle 默认 h3 跳过 h2）。
 - SEOmator 商品页：90 / A（Cycle 1 为 88 / B）。剩余多为部署层（HTTPS、安全头、压缩、HTTP/2），可前端处理的：LCP 图无 fetchpriority、robots.txt 未引用 sitemap、meta description 偏短（数据内容）。
 - 环境注：沙箱重置后 chromium / fonts-noto-cjk 需重装（apt）；`bunx` 不在 PATH，用 `bun x`；build 超过 120s，需后台运行。
+
+
+## Cycle 3 — 买家旅程打磨 + 后台订单处理（2026-10-14，提交 a2e9ac5、116d323、12b89fa）
+
+计划与方案比较：docs/plans/cycle3.md。参考：amaeru.com 首页（顶部促销条、搜索面板“热门搜索 + 推荐商品”、多规格卡片 “From $x”）。
+
+### Findings（按价值排序）
+1. 商品页数量改为 2 后，价格和手机吸底栏都还显示单价，没有合计。
+2. 多规格商品卡只显示首个规格价（Spotify 首规格 ¥15 / 另一规格 ¥158），没有“起”价；按价格排序也只看首规格价。
+3. 404/错误页是英文 “Page Not Found”，没有页头页脚和返回入口。
+4. 商品页打开搜索没有推荐商品（只有首页传了商品）；搜不到时只有一句话，是死路。
+5. 结算页错误态同时显示“正在确认订单信息...”和“无法继续支付”，且没有任何按钮；加载态只有一行字。
+6. prefers-reduced-motion 下首页 hero 入场、页头位移、卡片图片缩放、轮播箭头仍在动。
+7. 后台发货对话框看不到商品/数量/联系方式/金额，处理时要来回切详情；订单详情在手机上单列竖排、标题居中。
+8. 后台仪表盘手机端 5 张指标卡单列（每张 134px），趋势图被推到很靠下。
+9. 后台 axe `heading-order`（6 页）：卡片标题 h3 紧跟页面 h1。
+10. 登录/注册/账户订单页的语言、主题按钮 36px；主题按钮名叫“黑暗/白天”。
+
+### Changes
+- 商品页：表单提交按钮上方加“合计 · ¥单价 × 数量 ¥总价”（`data-testid=buy-summary`，aria-live）；手机吸底栏显示“规格 × 数量”和合计。仅展示：前端 `单价分 × 数量`，有优惠预览时直接用服务端返回的 finalAmount；下单金额仍由服务端计算，提交逻辑未动（脚本只新增两个展示用 computed 和一个 formatCentsAsYuan 导入）。
+- “¥x 起”：`pages/index/+data.server.ts` 在 `getPublicCatalog` 结果上加一个只读查询（ACTIVE 规格的最小价与数量），给商品加 `minPrice`/`skuCount`；ProductCard、首页轮播、搜索面板在多规格时显示“¥x 起 / From ¥x”；价格排序用最低价。`server/` 无改动。
+- 搜索面板：商品页 data 复用 `getPublicCatalog` 传入推荐商品与分类（排除当前商品）；匹配范围加上分类名；无结果时显示提示并继续展示推荐商品；结果标题显示“找到 N 件相关商品”。
+- `pages/_error/+Page.vue`：StoreShell 包裹，三语文案，404 给“返回首页 / 查询订单”，500 给“返回首页 / 重新加载”；`throw render(code, reason)` 带的原因原样显示。
+- 结算页（支付页，只改模板）：错误时描述改为“没有找到可以继续支付的订单。”并给“返回首页 / 查询订单”；加载态改为骨架。
+- 动效：`.mk-store` 范围内在 reduced-motion 下动画 1ms、不过渡 transform（保留颜色/透明度反馈）；两处 JS 平滑滚动在 reduced-motion 时改为瞬间。
+- 后台订单：发货对话框顶部加订单摘要（商品 × 数量、联系方式、金额、订单号，`data-testid=delivery-summary`，只改模板）；详情对话框与发货对话框标题左对齐，订单信息在手机上两列。
+- 后台仪表盘：手机两列指标卡，金额卡占整行，五张卡都在首屏内、图表上移；数字 24px（桌面 28px）。
+- CardTitle 默认标签可由布局注入（`mk-card-title-tag`），后台布局注入 h2 → 后台 axe 0 违规；前台仍为 h3。
+- StorefrontPreferences 按钮 44px；zh-CN 主题文案“浅色/深色”。
+
+### 决策
+- 促销条：现有站点公告条已经承担这个位置（后台可配置文案，长文自动跑马灯）。amaeru 的 “Shop Now” 按钮需要新的设置项（链接/按钮文字）→ 涉及设置结构，不做；记为待定。
+- 热门搜索词：用“热门分类”标签代替 amaeru 的固定热门词（没有搜索统计数据，硬编码词不可维护）。
+- 不加购物车：单商品直购是现有订单模型，加购物车属于方向级变化。
+
+### Tests（最终状态）
+- typecheck 39 = 基线（无新增）；eslint 0/0；unit 100 pass / 0 fail；vike build 成功。
+- p1_check 20 路径 200、无 console 错误与横向溢出；p2_check 桌面 32 / 手机 38 全通过。
+- regress.py 新增 c3-*：from-price、buy-total、search-fallback、404-page、checkout-error、reduced-motion、auth-pref-44（前台），dash-layout、delivery-summary（后台）。结果：手机前台 25、桌面前台 22（auth-pref 加入前）、手机后台 10、桌面后台 9，全部 0 FAIL。
+- axe：手机前台 7 页 0 违规；桌面后台 16 页 0 违规（Cycle 2 剩余的 heading-order 已清零）。
+- SEOmator 商品页 90 / A（与 Cycle 2 持平）。
+- miokey-qa 新增：c3_eval.py（买家旅程探针）、c3_admin.py（仪表盘/详情/发货对话框探针）、tsc.sh（vue-tsc 对比基线）、axesum.py。
+
+### Deferred
+- 后台手机小触控目标（探针仍报）：推送配置表格复选框 16px（触屏 ::after 扩展可能未被探针识别，需确认）、系统设置时区组合框 “Show popup” 英文名与 16px 按钮、设置子导航胶囊 36px、Telegram/企业微信按钮 40px。
+- robots.txt 引用 sitemap（静态文件不知道站点域名，需服务端生成）；LCP/安全头/压缩属部署层。
+- 公告条 CTA（需新设置项）。
+- 首页卡片库存文字仍按首规格库存。
