@@ -28,13 +28,10 @@ const menuOpen = ref(false);
 const searchOpen = ref(false);
 const categoryMenuOpen = ref(false);
 // Pages without the catalogue in their data (order lookup, account…) fetch the category list when the menu opens.
-const { categories: menuCategories, totalCount: menuTotal, ensure: ensureCategories } = useNavCategories(() => props.categories, () => props.productTotal);
+const { categories: menuCategories, ensure: ensureCategories } = useNavCategories(() => props.categories, () => props.productTotal);
 // Drawer second level under "All products"; open by default, the chevron folds it away.
 const menuCategoriesOpen = ref(true);
-const drawerCategories = computed(() => [
-  { id: null as number | null, name: messages.value.storefront.all, count: menuTotal.value ?? undefined },
-  ...menuCategories.value.map((item) => ({ id: item.id as number | null, name: item.name, count: item.count })),
-]);
+const drawerCategories = computed(() => menuCategories.value.map((item) => ({ id: item.id as number | null, name: item.name, count: item.count })));
 watch(menuOpen, (value) => {
   if (!value) return;
   void ensureCategories();

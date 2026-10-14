@@ -7,9 +7,10 @@ import { categoryHref, useHomeCategoryFilter, useNavCategories, type NavCategory
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 
 /**
- * Desktop header "All products" disclosure menu (WAI-ARIA disclosure navigation pattern):
- * opens on mouse hover (small open/close delay so passing over it does not flicker), on keyboard
- * (Enter / Space / ArrowDown) and on click/tap (touch laptops never get a hover). Esc closes and returns
+ * Desktop header "All products" link with a category disclosure menu (WAI-ARIA disclosure navigation pattern):
+ * the label is a plain link to every product; the category panel opens on mouse hover (small open/close delay
+ * so passing over it does not flicker), on ArrowDown from the link, and from the chevron button
+ * (click/tap and Enter / Space; touch laptops never get a hover). Esc closes and returns
  * focus to the trigger; leaving with Tab or clicking outside closes it. On the home page a category
  * filters the loaded catalogue in place; elsewhere it client-navigates to `/?category=<id>`.
  * The panel is always rendered (v-show), so the SSR HTML already carries every category link.
@@ -19,7 +20,7 @@ const props = withDefaults(defineProps<{ categories?: NavCategory[]; total?: num
 const { messages, t } = useStorefrontPreferences();
 const pageContext = usePageContext();
 const homeFilter = useHomeCategoryFilter();
-const { categories, totalCount, loading, ensure } = useNavCategories(() => props.categories, () => props.total);
+const { categories, loading, ensure } = useNavCategories(() => props.categories, () => props.total);
 
 const panelId = `mk-category-menu-${useId()}`;
 const open = ref(false);
@@ -39,10 +40,8 @@ const currentId = computed<number | null>(() => {
   return Number.isInteger(id) ? id : null;
 });
 const onHome = computed(() => (pageContext.urlPathname || "/") === "/");
-const items = computed(() => [
-  { id: null as number | null, name: messages.value.storefront.all, count: totalCount.value ?? undefined },
-  ...categories.value.map((item) => ({ id: item.id as number | null, name: item.name, count: item.count })),
-]);
+// "All products" is the trigger link itself, so the panel lists only the categories.
+const items = computed(() => categories.value.map((item) => ({ id: item.id as number | null, name: item.name, count: item.count })));
 
 function clearTimer() { if (timer) { clearTimeout(timer); timer = undefined; } }
 function setOpen(value: boolean, reason: typeof openedBy = null) {
@@ -136,19 +135,29 @@ const countLabel = (count: number | undefined) => (count === undefined ? "" : t(
 
 <template>
   <div ref="root" class="relative" data-testid="header-category-menu" @pointerenter="onPointerEnter" @pointerleave="onPointerLeave" @keydown="onKeydown" @focusout="onFocusOut" @pointerdown="onRootPointerDown">
-    <button
-      ref="trigger"
-      type="button"
-      :aria-expanded="open"
-      :aria-controls="panelId"
-      :data-active="active || undefined"
-      class="inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-300 outline-none hover:bg-foreground hover:text-background focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-expanded:bg-foreground aria-expanded:text-background data-[active]:bg-foreground data-[active]:text-background"
-      @click="onTriggerClick"
-      @keydown="onTriggerKeydown"
+    <div
+      :data-active="active || open || undefined"
+      class="inline-flex items-center rounded-full text-sm font-medium transition-colors duration-300 hover:bg-foreground hover:text-background data-[active]:bg-foreground data-[active]:text-background"
     >
-      {{ messages.shop.allProducts }}
-      <ChevronDownIcon class="size-3.5 transition-transform duration-300 motion-reduce:transition-none" :class="open ? 'rotate-180' : ''" aria-hidden="true" />
-    </button>
+      <a
+        :href="categoryHref(null)"
+        class="rounded-full py-1.5 pl-3.5 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        @click="choose(null, $event)"
+        @keydown="onTriggerKeydown"
+      >{{ messages.shop.allProducts }}</a>
+      <button
+        ref="trigger"
+        type="button"
+        :aria-expanded="open"
+        :aria-controls="panelId"
+        :aria-label="messages.storefront.categories"
+        class="grid h-7 w-7 place-items-center rounded-full pr-1 outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        @click="onTriggerClick"
+        @keydown="onTriggerKeydown"
+      >
+        <ChevronDownIcon class="size-3.5 transition-transform duration-300 motion-reduce:transition-none" :class="open ? 'rotate-180' : ''" aria-hidden="true" />
+      </button>
+    </div>
     <Transition name="mk-pop">
       <div
         v-show="open"
