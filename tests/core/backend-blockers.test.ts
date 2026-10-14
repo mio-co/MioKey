@@ -172,9 +172,12 @@ describe("HashPay order id stays server-side", () => {
 describe("admin sign-in does not reveal accounts", () => {
   type RawResponse = { status: number; contentType: string | null; headers: string[]; text: string; ms: number };
 
+  // server/env.ts imports the Workers-only module; Better Auth only needs a secret from it.
+  // One shared object, so a test can switch Turnstile on by setting its keys.
+  const authEnv: Record<string, string> = { BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0123" };
+
   async function signIn(database: D1Database, email: string, admin: boolean, password = "wrong-password"): Promise<RawResponse> {
-    // server/env.ts imports the Workers-only module; Better Auth only needs a secret from it.
-    mock.module("cloudflare:workers", () => ({ env: { BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0123" } }));
+    mock.module("cloudflare:workers", () => ({ env: authEnv }));
     const { betterAuthHandler } = await import("../../server/better-auth-handler");
     const handler = betterAuthHandler as unknown as (request: Request, context: unknown, runtime: unknown) => Promise<Response>;
     const request = new Request("https://shop.example/api/auth/sign-in/email", {
@@ -188,17 +191,26 @@ describe("admin sign-in does not reveal accounts", () => {
     return { status: response.status, contentType: response.headers.get("content-type"), headers: [...response.headers.entries()].map(([name, value]) => `${name}: ${value}`).sort(), text, ms: performance.now() - started };
   }
 
-  test("non-root, unknown and disabled accounts get byte-identical responses to Better Auth's real wrong-password answer for root", async () => {
+  async function seedAccounts() {
     const context = createTestDatabase();
-    try {
-      const now = Date.now();
-      context.sqlite.query("INSERT INTO user (id, name, email, emailVerified, twoFactorEnabled, createdAt, updatedAt) VALUES ('root', 'Root', 'root@example.com', 1, 0, ?, ?)").run(now, now);
-      context.sqlite.query("INSERT INTO account (id, accountId, providerId, userId, password, createdAt, updatedAt) VALUES ('root-credential', 'root', 'credential', 'root', ?, ?, ?)").run(await hashPassword("correct-password"), now, now);
-      context.sqlite.query("INSERT INTO user (id, name, email, emailVerified, twoFactorEnabled, createdAt, updatedAt) VALUES ('member', 'Member', 'member@example.com', 1, 0, ?, ?)").run(now, now);
-      context.sqlite.query("INSERT INTO user (id, name, email, emailVerified, twoFactorEnabled, disabledAt, createdAt, updatedAt) VALUES ('off', 'Off', 'off@example.com', 1, 0, ?, ?, ?)").run(now, now, now);
-      context.sqlite.query("INSERT INTO adminBootstrap (id, userId, createdAt) VALUES (1, 'root', ?)").run(now);
+    const now = Date.now();
+    context.sqlite.query("INSERT INTO user (id, name, email, emailVerified, twoFactorEnabled, createdAt, updatedAt) VALUES ('root', 'Root', 'root@example.com', 1, 0, ?, ?)").run(now, now);
+    context.sqlite.query("INSERT INTO account (id, accountId, providerId, userId, password, createdAt, updatedAt) VALUES ('root-credential', 'root', 'credential', 'root', ?, ?, ?)").run(await hashPassword("correct-password"), now, now);
+    context.sqlite.query("INSERT INTO user (id, name, email, emailVerified, twoFactorEnabled, createdAt, updatedAt) VALUES ('member', 'Member', 'member@example.com', 1, 0, ?, ?)").run(now, now);
+    context.sqlite.query("INSERT INTO user (id, name, email, emailVerified, twoFactorEnabled, disabledAt, createdAt, updatedAt) VALUES ('off', 'Off', 'off@example.com', 1, 0, ?, ?, ?)").run(now, now, now);
+    context.sqlite.query("INSERT INTO adminBootstrap (id, userId, createdAt) VALUES (1, 'root', ?)").run(now);
+    return context;
+  }
 
-      // Root on the admin path is not rejected early: this response comes from Better Auth itself.
+  function visible(response: RawResponse) {
+    return { status: response.status, contentType: response.contentType, text: response.text, headers: response.headers };
+  }
+
+  test("non-root, unknown and disabled accounts get byte-identical responses to Better Auth's real wrong-password answer for root", async () => {
+    const context = await seedAccounts();
+    try {
+
+      // Root on the admin path passes the before-hook: this is the sign-in endpoint's own wrong-password answer.
       const real = await signIn(context.database, "root@example.com", true);
       assert.equal(real.status, 401);
       const rejected = [
@@ -211,10 +223,58 @@ describe("admin sign-in does not reveal accounts", () => {
       for (const response of rejected) {
         assert.deepEqual({ status: response.status, contentType: response.contentType, text: response.text }, { status: real.status, contentType: real.contentType, text: real.text });
         assert.deepEqual(response.headers, real.headers);
-        // The early reject must spend comparable password-hash time; a bare response takes ~0 ms.
+        // The before-hook reject must spend comparable password-hash time; a bare response takes ~0 ms.
         assert.ok(response.ms >= real.ms * 0.25, `reject took ${response.ms.toFixed(1)} ms vs Better Auth ${real.ms.toFixed(1)} ms`);
       }
     } finally {
+      context.close();
+    }
+  }, 60_000);
+
+  test("a whitespace-padded email gets the same answer for root and non-root accounts on both paths", async () => {
+    const context = await seedAccounts();
+    try {
+      const admin = [
+        await signIn(context.database, " root@example.com", true),
+        await signIn(context.database, " member@example.com", true),
+        await signIn(context.database, " nobody@example.com", true),
+        await signIn(context.database, " off@example.com", true),
+      ];
+      const publicPath = [
+        await signIn(context.database, " root@example.com", false),
+        await signIn(context.database, " member@example.com", false),
+        await signIn(context.database, " nobody@example.com", false),
+        await signIn(context.database, " off@example.com", false),
+      ];
+      // Better Auth's own z.email() check answers first, for every account.
+      assert.equal(admin[0]!.status, 400);
+      assert.equal(JSON.parse(admin[0]!.text).code, "INVALID_EMAIL");
+      for (const response of [...admin.slice(1), ...publicPath]) assert.deepEqual(visible(response), visible(admin[0]!));
+    } finally {
+      context.close();
+    }
+  }, 60_000);
+
+  test("with Turnstile on, a missing captcha token gets the same answer for root and non-root accounts on both paths", async () => {
+    const context = await seedAccounts();
+    authEnv.TURNSTILE_SITE_KEY = "test-site-key";
+    authEnv.TURNSTILE_SECRET_KEY = "test-secret-key";
+    try {
+      const responses = [
+        await signIn(context.database, "root@example.com", true),
+        await signIn(context.database, "member@example.com", true),
+        await signIn(context.database, "nobody@example.com", true),
+        await signIn(context.database, "off@example.com", true),
+        await signIn(context.database, "root@example.com", false),
+        await signIn(context.database, "member@example.com", false),
+        await signIn(context.database, "off@example.com", false),
+      ];
+      assert.equal(responses[0]!.status, 400);
+      assert.equal(JSON.parse(responses[0]!.text).code, "MISSING_RESPONSE");
+      for (const response of responses.slice(1)) assert.deepEqual(visible(response), visible(responses[0]!));
+    } finally {
+      delete authEnv.TURNSTILE_SITE_KEY;
+      delete authEnv.TURNSTILE_SECRET_KEY;
       context.close();
     }
   }, 60_000);
@@ -254,6 +314,8 @@ describe("error classification", () => {
       const junk = JSON.stringify({ key: Buffer.from("x".repeat(256)).toString("base64"), iv: Buffer.from("y".repeat(12)).toString("base64"), data: Buffer.from("z".repeat(32)).toString("base64") });
       assert.equal((await adapter.verify({ payload: {}, rawBody: junk })).message, "HASHPAY_CALLBACK_INVALID");
       assert.equal((await adapter.verify({ payload: {}, rawBody: "not json" })).message, "HASHPAY_CALLBACK_INVALID");
+      assert.equal((await adapter.verify({ payload: {}, rawBody: "null" })).message, "HASHPAY_CALLBACK_INVALID");
+      assert.equal((await adapter.verify({ payload: {}, rawBody: "[]" })).message, "HASHPAY_CALLBACK_INVALID");
       const wrongKeyEnvelope = await encryptHashpayCallback({ timestamp: Math.floor(Date.now() / 1000), payload: { merchantNo: "ORD-1", orderId: "HP-1", amount: 1, status: "paid" } });
       const otherKey = generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({ type: "pkcs8", format: "pem" }).toString();
       assert.equal((await createProviderAdapter("HASHPAY", { ...hashpayConfig, privateKey: otherKey }).verify({ payload: {}, rawBody: wrongKeyEnvelope })).verified, false);

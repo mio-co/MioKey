@@ -7,7 +7,7 @@ import {
 import { betterAuth } from "better-auth";
 import { getAuthConfig } from "./better-auth";
 import { resolveAuthOrigin, rewriteRequestOrigin, withAuthNoStore } from "./auth-origin";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { schema } from "../database/drizzle/schema";
 import { getDrizzleDb } from "../database/drizzle";
 import { hasRoot } from "./admin";
@@ -92,38 +92,6 @@ export const betterAuthHandler = enhance(
         { code: "SIGN_UP_UNAVAILABLE", message: "Sign-up is currently unavailable." },
         { status: 503 },
       ));
-    }
-
-    if (authRequest.method === "POST" && authPath.endsWith("/sign-in/email")) {
-      const body = await authRequest.clone().json().catch(() => null) as { email?: unknown; password?: unknown } | null;
-      const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-      const password = typeof body?.password === "string" ? body.password : null;
-      const isAdminLogin = authRequest.headers.get("x-cffk-admin-login") === "1";
-      // A non-string password fails Better Auth's body validation for every account alike.
-      if (email && password !== null) {
-        const [account] = await getDrizzleDb(runtime)
-          .select({ disabledAt: schema.user.disabledAt, rootUserId: schema.adminBootstrap.userId })
-          .from(schema.user)
-          .leftJoin(schema.adminBootstrap, eq(schema.adminBootstrap.userId, schema.user.id))
-          .where(sql`lower(${schema.user.email}) = ${email}`)
-          .limit(1);
-        // Every rejection here must look exactly like Better Auth's own wrong-password
-        // answer, so callers cannot tell root, other accounts and disabled accounts apart.
-        const rejected = (isAdminLogin && (!account || !account.rootUserId))
-          || (!isAdminLogin && Boolean(account?.rootUserId))
-          || Boolean(account?.disabledAt);
-        if (rejected) {
-          // Better Auth hashes the submitted password for unknown users so the
-          // answer takes as long as a real password check; do the same work.
-          const auth = getAuth(runtime, publicOrigin);
-          await (await auth.$context).password.hash(password);
-          // Same status, body bytes and Content-Type as Better Auth's wrong-password APIError.
-          return withAuthNoStore(new Response(
-            JSON.stringify({ message: "Invalid email or password", code: "INVALID_EMAIL_OR_PASSWORD" }),
-            { status: 401, headers: { "content-type": "application/json" } },
-          ));
-        }
-      }
     }
 
     return withAuthNoStore(await getAuth(runtime, publicOrigin).handler(authRequest));

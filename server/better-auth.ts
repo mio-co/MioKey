@@ -1,10 +1,11 @@
 import { env } from "./env";
 import { getTurnstileConfig } from "@/lib/turnstile-config";
 import type { RuntimeAdapter } from "@universal-middleware/core";
-import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { BASE_ERROR_CODES, betterAuth, type BetterAuthOptions } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { z } from "zod/v4";
 import { captcha, twoFactor } from "better-auth/plugins";
 import { getDrizzleDb } from "../database/drizzle";
 import { schema } from "../database/drizzle/schema";
@@ -96,6 +97,34 @@ export function getAuthConfig(runtime?: RuntimeAdapter, publicOrigin?: string, o
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         const database = runtimeEnv?.DB;
+        if (ctx.path === "/sign-in/email") {
+          // Runs after Better Auth's rate limiter and plugin onRequest (captcha), and
+          // before the endpoint's own body validation. Anything Better Auth would reject
+          // on its own (non-string fields, an email failing its z.email() check) is left
+          // to it, so every account gets the same answer.
+          const email: unknown = ctx.body?.email;
+          const password: unknown = ctx.body?.password;
+          if (typeof email !== "string" || typeof password !== "string" || !z.email().safeParse(email).success) return;
+          const isAdminLogin = ctx.headers?.get("x-cffk-admin-login") === "1";
+          // Same lookup as Better Auth's findUserByEmail: lower-case only, no trim.
+          const [account] = await getDrizzleDb(runtime)
+            .select({ disabledAt: schema.user.disabledAt, rootUserId: schema.adminBootstrap.userId })
+            .from(schema.user)
+            .leftJoin(schema.adminBootstrap, eq(schema.adminBootstrap.userId, schema.user.id))
+            .where(eq(schema.user.email, email.toLowerCase()))
+            .limit(1);
+          const rejected = (isAdminLogin && !account?.rootUserId)
+            || (!isAdminLogin && Boolean(account?.rootUserId))
+            || Boolean(account?.disabledAt);
+          if (rejected) {
+            // Spend the same password-hash time Better Auth spends on an unknown user,
+            // then answer with its own wrong-password error.
+            await ctx.context.password.hash(password);
+            throw APIError.from("UNAUTHORIZED", BASE_ERROR_CODES.INVALID_EMAIL_OR_PASSWORD);
+          }
+          return;
+        }
+
         if (ctx.path === "/change-email") {
           if (!database) throw new APIError("INTERNAL_SERVER_ERROR", { message: "Email change settings are unavailable." });
 

@@ -47,6 +47,7 @@ async function verifyStripeSignature(rawBody: string, signature: string, secret:
 async function decryptHashpay(rawBody: string, privateKeyPem: string) {
   let envelope: { key?: unknown; iv?: unknown; data?: unknown };
   try { envelope = JSON.parse(rawBody) as typeof envelope; } catch { appError("HASHPAY_CALLBACK_INVALID"); }
+  if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) appError("HASHPAY_CALLBACK_INVALID");
   if (typeof envelope.key !== "string" || !envelope.key || typeof envelope.iv !== "string" || !envelope.iv || typeof envelope.data !== "string" || !envelope.data) appError("HASHPAY_CALLBACK_INVALID");
   // A bad merchant key is a configuration error and must stay reportable.
   const privateKey = await importPem(privateKeyPem, { name: "RSA-OAEP", hash: "SHA-256" }, "decrypt");
