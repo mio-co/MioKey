@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 // @ts-expect-error Tests run with Bun, while this project intentionally omits Bun's global type package.
 import type { Database } from "bun:sqlite";
 import { getPublicCatalog, getPublicProductDetail } from "../../server/catalog/public.ts";
-import { countAvailableCards } from "../../server/inventory/allocator.ts";
+import { allocateCardsForPaidOrder, countAvailableCards, ensureCardsReservedForPendingOrder } from "../../server/inventory/allocator.ts";
 import { closeExpiredPendingOrders, closePendingOrder, confirmOrderPayment, createOrder, getOrderForQuery } from "../../server/order/service.ts";
 import { PaymentFlowService } from "../../server/payment/flow-service.ts";
 import { createTestDatabase } from "../helpers/sqlite-d1.ts";
@@ -148,5 +148,70 @@ describe("CARD_AUTO reservation", () => {
 
     context.sqlite.query("UPDATE card SET status = 'SOLD', orderId = NULL").run();
     expect(await flow.resume(legacy.orderNo, null, "a@example.com").then(() => "OK", errorCode)).toBe("PRODUCT_STOCK_NOT_ENOUGH");
+  });
+
+  test("concurrent reservation top-ups of a legacy order reserve exactly the order quantity, and the order delivers", async () => {
+    const context = setup(5);
+    const legacy = await buy(context, "a@example.com", 2);
+    context.sqlite.query("UPDATE card SET status = 'UNUSED', orderId = NULL").run();
+    const results = await Promise.allSettled([
+      ensureCardsReservedForPendingOrder(context.database, legacy.id, context.productSkuId, 2),
+      ensureCardsReservedForPendingOrder(context.database, legacy.id, context.productSkuId, 2),
+    ]);
+    expect(results.map((result) => result.status)).toEqual(["fulfilled", "fulfilled"]);
+    expect(context.sqlite.query("SELECT count(*) AS n FROM card WHERE orderId = ? AND status = 'RESERVED'").get(legacy.id)).toEqual({ n: 2 });
+    expect(await countAvailableCards(context.database, context.productSkuId)).toBe(3);
+    expect(await confirmOrderPayment(context.database, legacy.id)).toEqual({ outcome: "CONFIRMED" });
+    expect((await getOrderForQuery(context.database, legacy.orderNo, null, "a@example.com"))?.deliveries).toEqual(["CARD-1", "CARD-2"]);
+    expect(cards(context.sqlite).map((item) => item.status)).toEqual(["SOLD", "SOLD", "UNUSED", "UNUSED", "UNUSED"]);
+  });
+
+  test("concurrent resumes of a legacy order reserve exactly the order quantity", async () => {
+    const context = setup(3);
+    const legacy = await buy(context, "a@example.com");
+    context.sqlite.query("UPDATE card SET status = 'UNUSED', orderId = NULL").run();
+    const flow = new PaymentFlowService(context.database);
+    const results = await Promise.all([
+      flow.resume(legacy.orderNo, null, "a@example.com").then(() => "OK", errorCode),
+      flow.resume(legacy.orderNo, null, "a@example.com").then(() => "OK", errorCode),
+    ]);
+    expect(results).toEqual(["PAYMENT_PROVIDER_NOT_AVAILABLE", "PAYMENT_PROVIDER_NOT_AVAILABLE"]);
+    expect(cards(context.sqlite)).toEqual([
+      { content: "CARD-1", status: "RESERVED", orderId: legacy.id },
+      { content: "CARD-2", status: "UNUSED", orderId: null },
+      { content: "CARD-3", status: "UNUSED", orderId: null },
+    ]);
+    expect(await confirmOrderPayment(context.database, legacy.id)).toEqual({ outcome: "CONFIRMED" });
+    expect(cards(context.sqlite).map((item) => item.status)).toEqual(["SOLD", "UNUSED", "UNUSED"]);
+  });
+
+  test("a payment confirmed after the order was closed is a payment exception and leaves the cards unused", async () => {
+    const context = setup(1);
+    const created = await buy(context, "a@example.com");
+    expect(await closePendingOrder(context.database, created.id)).toEqual({ closed: true });
+    expect(await confirmOrderPayment(context.database, created.id)).toEqual({ outcome: "PAYMENT_EXCEPTION" });
+    expect(cards(context.sqlite)).toEqual([{ content: "CARD-1", status: "UNUSED", orderId: null }]);
+  });
+
+  test("a close after the payment was confirmed leaves the cards sold", async () => {
+    const context = setup(1);
+    const created = await buy(context, "a@example.com");
+    expect(await confirmOrderPayment(context.database, created.id)).toEqual({ outcome: "CONFIRMED" });
+    expect(await closePendingOrder(context.database, created.id)).toEqual({ closed: false });
+    expect(cards(context.sqlite)).toEqual([{ content: "CARD-1", status: "SOLD", orderId: created.id }]);
+    expect(context.sqlite.query("SELECT status, paymentStatus FROM `order` WHERE id = ?").get(created.id)).toEqual({ status: "DELIVERED", paymentStatus: "PAID" });
+  });
+
+  test("allocation with more reserved cards than the quantity sells exactly the quantity and releases the surplus", async () => {
+    const context = setup(3);
+    const created = await buy(context, "a@example.com");
+    context.sqlite.query("UPDATE card SET status = 'RESERVED', orderId = ? WHERE content IN ('CARD-2', 'CARD-3')").run(created.id);
+    const allocated = await allocateCardsForPaidOrder(context.database, created.id, 1, context.productSkuId);
+    expect(allocated.map((item) => item.content)).toEqual(["CARD-1"]);
+    expect(cards(context.sqlite)).toEqual([
+      { content: "CARD-1", status: "SOLD", orderId: created.id },
+      { content: "CARD-2", status: "UNUSED", orderId: null },
+      { content: "CARD-3", status: "UNUSED", orderId: null },
+    ]);
   });
 });

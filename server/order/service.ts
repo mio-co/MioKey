@@ -181,7 +181,7 @@ export async function createOrder(database: D1Database, input: CreateOrderInput,
   if (reserveCards) {
     // Hold the cards for this order inside the same batch: a concurrent create
     // that finds fewer unreserved cards fails the guard and rolls back whole.
-    statements.push(...cardReservationStatements(database, { orderIdSql: "(SELECT id FROM `order` WHERE orderNo = ?)", orderIdValue: orderNo, productSkuId: sku.id, quantity, now }));
+    statements.push(...cardReservationStatements(database, { order: { orderNo }, held: 0, productSkuId: sku.id, quantity, now }));
   }
   if (discountId !== null) {
     statements.push(
