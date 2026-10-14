@@ -10,12 +10,15 @@ async function internalOnCreatePayment(input: PaymentCreateInput) {
   const context = getContext<TelefuncContext>();
   if (!context.env?.DB) appError("DATABASE_UNAVAILABLE");
   const userId = context.user?.id ?? null;
+  // Telefunc's getContext() is unavailable on Workers once the telefunction yields,
+  // so resolve the service (which reads the context) before rate limiting.
+  const service = requirePaymentFlowService();
   await enforceOrderRequestRateLimit(context.env.DB, {
     action: "CREATE",
     userId,
     clientIp: context.clientIp,
   });
-  return requirePaymentFlowService().create(input, userId);
+  return service.create(input, userId);
 }
 
 export const onCreatePayment = telefuncAction(internalOnCreatePayment);

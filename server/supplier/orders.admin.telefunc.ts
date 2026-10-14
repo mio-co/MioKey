@@ -30,8 +30,8 @@ async function parseAction(input: unknown) {
 }
 
 export const onRetrySupplierOrder = telefuncAction(async (input: unknown) => {
-  const { id } = await parseAction(input);
   const { database, db, runtime } = requireAdmin();
+  const { id } = await parseAction(input);
   const [task] = await db.select({ id: supplierOrder.id, state: supplierOrder.state }).from(supplierOrder).where(eq(supplierOrder.id, id)).limit(1);
   if (!task) appError("SUPPLIER_ORDER_NOT_FOUND");
   if (["supplied", "refunded"].includes(task.state)) appError("SUPPLIER_ORDER_ALREADY_FINISHED");
@@ -40,8 +40,8 @@ export const onRetrySupplierOrder = telefuncAction(async (input: unknown) => {
 });
 
 export const onReconcileSupplierOrder = telefuncAction(async (input: unknown) => {
-  const { id } = await parseAction(input);
   const { database, db, runtime } = requireAdmin();
+  const { id } = await parseAction(input);
   const [task] = await db.select({ id: supplierOrder.id, upstreamOrderId: supplierOrder.upstreamOrderId, state: supplierOrder.state }).from(supplierOrder).where(eq(supplierOrder.id, id)).limit(1);
   if (!task) appError("SUPPLIER_ORDER_NOT_FOUND");
   if (!task.upstreamOrderId) appError("SUPPLIER_UPSTREAM_ORDER_MISSING");
@@ -50,8 +50,8 @@ export const onReconcileSupplierOrder = telefuncAction(async (input: unknown) =>
 });
 
 export const onReselectSupplierOrderAccount = telefuncAction(async (input: unknown) => {
-  const { id } = await parseAction(input);
   const { db } = requireAdmin();
+  const { id } = await parseAction(input);
   const [task] = await db.select({ id: supplierOrder.id, state: supplierOrder.state, upstreamOrderId: supplierOrder.upstreamOrderId }).from(supplierOrder).where(eq(supplierOrder.id, id)).limit(1);
   if (!task) appError("SUPPLIER_ORDER_NOT_FOUND");
   if (task.upstreamOrderId) appError("SUPPLIER_ACCOUNT_LOCKED");
