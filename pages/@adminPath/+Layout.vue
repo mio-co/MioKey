@@ -77,6 +77,7 @@ const routeMeta = computed(() => getAdminBreadcrumb(pageContext.urlPathname, bas
 const pageKey = computed(() => pageContext.urlPathname);
 const timezone = ref("Asia/Shanghai");
 provide(SITE_TIMEZONE_KEY, timezone);
+provide("mk-card-title-tag", "h2");
 onMounted(() => {
   if (isLoginPage.value) return;
   void runTelefunc(() => onGetSiteSettings(), { notifyError: false }).then((settings) => { timezone.value = settings.timezone; }).catch(() => undefined);

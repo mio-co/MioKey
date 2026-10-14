@@ -30,7 +30,7 @@
 
     <Dialog v-model:open="detailOpen">
       <DialogContent class="grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-5xl">
-        <DialogHeader class="border-b px-5 py-4 pr-16 sm:px-6 sm:py-5 sm:pr-20">
+        <DialogHeader class="border-b px-5 py-4 pr-16 text-left sm:px-6 sm:py-5 sm:pr-20">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
             <div class="min-w-0">
               <DialogTitle>订单详情</DialogTitle>
@@ -51,8 +51,8 @@
                   <CardTitle class="text-sm">订单信息</CardTitle>
                 </CardHeader>
                 <CardContent class="p-4 sm:p-5">
-                  <dl class="grid gap-x-8 gap-y-5 text-sm sm:grid-cols-[minmax(0,1fr)_8rem]">
-                    <div class="min-w-0">
+                  <dl class="grid grid-cols-2 gap-x-6 gap-y-4 text-sm sm:grid-cols-[minmax(0,1fr)_8rem] sm:gap-x-8 sm:gap-y-5">
+                    <div class="col-span-2 min-w-0 sm:col-span-1">
                       <dt class="text-xs text-muted-foreground">商品</dt>
                       <dd class="mt-1 wrap-break-word font-medium">{{ detail.order.productNameSnapshot }}</dd>
                     </div>
@@ -68,7 +68,7 @@
                       <dt class="text-xs text-muted-foreground">订单金额</dt>
                       <dd class="mt-1 text-base font-semibold">¥{{ detail.order.amount }}</dd>
                     </div>
-                    <div class="min-w-0 sm:col-span-2">
+                    <div class="col-span-2 min-w-0">
                       <dt class="text-xs text-muted-foreground">联系方式</dt>
                       <dd class="mt-1 wrap-break-word">{{ detail.order.contactType }} · {{ detail.order.contactValue || "-" }}</dd>
                     </div>
@@ -149,8 +149,16 @@
     <Dialog v-model:open="deliveryOpen" @update:open="onDeliveryOpenChange">
       <DialogContent class="grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden p-0" @interact-outside.prevent @escape-key-down.prevent>
         <template v-for="deliveryKind in [orders.find((item) => item.id === deliveryOrderId)?.deliveryType]" :key="deliveryKind ?? 'unknown'">
-          <DialogHeader class="border-b px-6 py-5 pr-14"><DialogTitle>{{ deliveryKind === 'CARD_AUTO' || deliveryKind === 'FIXED_CARD' ? '重试自动发货' : '处理发货' }}</DialogTitle><DialogDescription>{{ deliveryKind === 'CARD_AUTO' || deliveryKind === 'FIXED_CARD' ? '这是自动发货订单，重新执行自动发货即可；卡密订单会从库存中分配。' : deliveryKind === 'MANUAL' || deliveryKind === 'EXPRESS' ? '填写发货内容（账号、卡密或物流单号），确认后买家即可在订单中看到。' : '人工或物流订单填写发货内容；自动卡密订单执行恢复发货。' }}</DialogDescription></DialogHeader>
+          <DialogHeader class="border-b px-6 py-5 pr-14 text-left"><DialogTitle>{{ deliveryKind === 'CARD_AUTO' || deliveryKind === 'FIXED_CARD' ? '重试自动发货' : '处理发货' }}</DialogTitle><DialogDescription>{{ deliveryKind === 'CARD_AUTO' || deliveryKind === 'FIXED_CARD' ? '这是自动发货订单，重新执行自动发货即可；卡密订单会从库存中分配。' : deliveryKind === 'MANUAL' || deliveryKind === 'EXPRESS' ? '填写发货内容（账号、卡密或物流单号），确认后买家即可在订单中看到。' : '人工或物流订单填写发货内容；自动卡密订单执行恢复发货。' }}</DialogDescription></DialogHeader>
           <div class="min-h-0 overflow-y-auto px-6 py-5">
+            <template v-for="target in [orders.find((item) => item.id === deliveryOrderId)]" :key="target?.id ?? 'none'">
+              <dl v-if="target" class="mb-5 grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border bg-muted/40 p-4 text-sm" data-testid="delivery-summary">
+                <div class="col-span-2 min-w-0"><dt class="text-xs text-muted-foreground">商品</dt><dd class="mt-0.5 wrap-break-word font-medium">{{ target.productName }} <span class="tabular-nums text-muted-foreground">× {{ target.quantity }}</span></dd></div>
+                <div class="min-w-0"><dt class="text-xs text-muted-foreground">联系方式</dt><dd class="mt-0.5 break-all">{{ target.contactValue || "-" }}</dd></div>
+                <div><dt class="text-xs text-muted-foreground">金额</dt><dd class="mt-0.5 font-medium tabular-nums">¥{{ target.amount }}</dd></div>
+                <div class="col-span-2 min-w-0"><dt class="text-xs text-muted-foreground">订单号</dt><dd class="mt-0.5 break-all font-mono text-xs">{{ target.orderNo }}</dd></div>
+              </dl>
+            </template>
             <template v-if="deliveryKind !== 'CARD_AUTO' && deliveryKind !== 'FIXED_CARD'"><label class="grid gap-2 text-sm font-medium">发货内容<Textarea v-model="deliveryContent" rows="6" class="min-h-28 w-full" placeholder="人工发货说明、物流单号或物流信息" /></label><p class="mt-3 text-xs text-muted-foreground">标记失败不会占用成功发货快照，修正内容后可再次完成发货。</p></template>
             <p v-else class="text-sm text-muted-foreground">如果仍未发货，请先到「卡密管理」确认该商品规格还有可用库存。</p>
           </div>

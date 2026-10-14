@@ -2,13 +2,14 @@
   <section class="flex w-full flex-col gap-6">
     <AdminPageHeader />
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      <Card v-for="metric in metrics" :key="metric.label" class="gap-0">
+    <!-- Phone: two columns, the money metric spans the row, so all five fit on the first screen above the chart. -->
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5" data-testid="dash-metrics">
+      <Card v-for="(metric, index) in metrics" :key="metric.label" :class="['gap-0 max-sm:py-4 max-sm:[&>*]:px-4', index === 2 ? 'col-span-2 sm:col-span-1' : '', index === metrics.length - 1 ? 'sm:max-xl:col-span-2' : '']">
         <CardHeader class="pb-0">
-          <CardDescription>{{ metric.label }}</CardDescription>
-          <CardTitle as="p" class="mk-display pt-1 text-[28px] leading-none tabular-nums">{{ metric.value }}</CardTitle>
+          <CardDescription class="max-sm:text-[13px]">{{ metric.label }}</CardDescription>
+          <CardTitle as="p" class="mk-display pt-1 text-[24px] leading-none tabular-nums sm:text-[28px]">{{ metric.value }}</CardTitle>
         </CardHeader>
-        <CardFooter class="pt-1.5 text-sm text-muted-foreground">{{ metric.description }}</CardFooter>
+        <CardFooter class="pt-1.5 text-xs text-muted-foreground sm:text-sm">{{ metric.description }}</CardFooter>
       </Card>
     </div>
 
