@@ -11,7 +11,7 @@ import { useDrawerHistory } from "@/lib/ui/drawer-history";
 import { useHomeCategoryFilter, useNavCategories } from "@/lib/storefront-categories";
 import { useScrollDirection } from "@/lib/ui/scroll-direction";
 import { useStorefrontPreferences, type StorefrontLocale } from "@/lib/storefront-preferences";
-import defaultProductImage from "@/assets/product_img.jpg?url";
+import defaultProductImage from "@/assets/product_img.svg?url";
 
 export type HeaderProduct = { id: number | string; name: string; slug: string; subtitle?: string | null; coverImage?: string | null; price: string; categoryName?: string | null; minPrice?: string; skuCount?: number };
 export type HeaderCategory = { id: number; name: string; count?: number };

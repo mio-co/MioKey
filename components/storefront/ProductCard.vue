@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { ArrowUpRightIcon } from "@lucide/vue";
-import defaultProductImage from "@/assets/product_img.jpg?url";
+import defaultProductImage from "@/assets/product_img.svg?url";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 
 export type CardProduct = { id: number; name: string; slug: string; subtitle: string | null; coverImage: string | null; price: string; categoryName: string | null; availableStock: number | null; minPrice?: string; skuCount?: number };

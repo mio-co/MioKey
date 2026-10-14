@@ -187,7 +187,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import defaultProductImage from "@/assets/product_img.jpg?url";
+import defaultProductImage from "@/assets/product_img.svg?url";
 import { clearLocalAddresses, getLocalAddresses, saveLocalAddress, type LocalAddress } from "@/lib/local-addresses";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 import { saveGuestOrder } from "@/lib/local-orders";
