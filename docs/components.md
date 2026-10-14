@@ -210,6 +210,23 @@ import AdminSidebar from "@/components/AdminSidebar.vue";
 
 仅由 `pages/@adminPath/+Layout.vue` 挂载，不在业务页面重复创建侧栏。
 
+### 前台商城组件（`components/storefront`）
+
+前台页面统一用 `StoreShell` 包裹内容，不在页面里自行拼头部和页脚。
+
+| 组件 | 用途 | 主要 Props / 插槽 |
+| --- | --- | --- |
+| `StoreShell` | 页头（`StoreHeader`）+ 内容区 + 页脚；设置本地化标签页标题 | `products` / `categories`（搜索与菜单抽屉数据）、`narrow`、`tone`（`plain`/`muted`）、`bottomBar`（为底部吸附购买栏留空）；默认插槽 |
+| `StoreHeader` | 滚动时隐藏/显示的粘性页头、搜索抽屉、手机菜单抽屉 | `products`、`categories`、`narrow` |
+| `PublicNav` | 语言、主题、登录/账户菜单。`LocaleMenu`（仅 md 以上可见时才水合）与 `AccountMenu`（空闲时水合）用 `defineAsyncComponent` + `hydrateOn*` 延迟加载 Reka 下拉代码，SSR 输出不变 | 无 |
+| `StoreDrawer` | 侧滑抽屉：滚动锁定、Esc 关闭、Tab 焦点循环、返回键关闭（配合 `useDrawerHistory`） | 作用域插槽 `close` |
+| `ProductCard` / `ProductCarousel` | 商品卡与首页精选轮播（embla，自动播放在悬停/聚焦/触摸与减少动态效果时暂停） | `product` + `eager` / `products` |
+| `SortSelect` | 首页排序下拉；首页以 `hydrateOnVisible` 懒水合 | `v-model`（`default`/`price-asc`/`price-desc`） |
+| `StickyBuyBar` | 目标元素滚出视口后出现的底部购买栏 | `target`（选择器）；默认插槽 |
+| `AuthShell` | 登录/注册/找回密码等认证页外壳 | 默认插槽、`aside` 插槽 |
+
+首屏最大图片（商品页主图、首页轮播第一张）不加淡入动画，并保持 `fetchpriority="high"`；`pages/+Head.vue` 为它输出 `<link rel="preload" as="image">`。
+
 ### `StorefrontFooter`
 
 导入：
@@ -218,7 +235,7 @@ import AdminSidebar from "@/components/AdminSidebar.vue";
 import StorefrontFooter from "@/components/storefront/StorefrontFooter.vue";
 ```
 
-公开商城页脚。它从页面上下文读取站点页脚文案和客服联系方式，展示版权信息及客服入口。单条联系方式直接跳转；多条联系方式使用下拉菜单。客服配置支持每行一条的“显示文字|链接地址”格式，未包含协议的地址按邮箱处理。
+公开商城页脚。它从页面上下文读取站点页脚文案和客服联系方式，分“商城 / 帮助 / 账户”三栏展示链接；每条客服联系方式在“帮助”栏中各占一行、直接跳转（新标签页）。客服配置支持每行一条的“显示文字|链接地址”格式，未包含协议的地址按邮箱处理。
 
 ```vue
 <StorefrontFooter />

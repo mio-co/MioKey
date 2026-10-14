@@ -88,6 +88,7 @@ MioKey 在 [34892002/cffk](https://github.com/34892002/cffk) 的基础上重做�
 
 - [开发规范](./docs/dev.md)
 - [共用组件规范](./docs/components.md)
+- [产品需求（PRD）](./docs/PRD.md) · [界面重做记录](./docs/rework-log.md)
 - [Cloudflare Workers 文档](https://developers.cloudflare.com/workers/)
 - [Cloudflare D1 文档](https://developers.cloudflare.com/d1/)
 
@@ -124,7 +125,7 @@ bun run deploy            # 迁移、导入默认数据并部署
 
 ## 🔧 技术栈
 
-- **前端**：Vike、Vue 3、Vite、Tailwind CSS、shadcn-vue
+- **前端**：Vike、Vue 3、Vite、Tailwind CSS v4、shadcn-vue（Reka UI）、embla-carousel-vue
 - **服务端**：Hono + Cloudflare Workers
 - **数据库**：Cloudflare D1 + Drizzle ORM
 - **认证**：Better Auth（邮箱密码与双因素认证）
@@ -146,6 +147,7 @@ MioKey 是 [CFFK](https://github.com/34892002/cffk)（作者 34892002 / ggyy 及
 - 保留原项目的 [LICENSE](./LICENSE)，并在 [NOTICE](./NOTICE) 中注明原作者与修改说明；
 - 本仓库的修改主要集中在前端：前台商城与管理后台的视觉、布局、交互、移动端适配和品牌（名称、Logo、链接）；
 - 支付、订单、发卡、认证、数据库结构与迁移、供应商同步、定时任务等服务端逻辑沿用上游实现，未改变行为；
+- 服务端仅有少量与界面相关的只读改动：品牌字符串与默认值、只读的 `GET /sitemap.xml` 与 `GET /robots.txt`（带 Sitemap 地址）、首页商品卡按全部规格汇总库存的只读查询；
 - “CFFK” 名称与原 Logo 属于原项目，MioKey 不使用它们。
 
 感谢原作者的开源工作。
@@ -163,6 +165,9 @@ MioKey 基于 [CFFK](https://github.com/34892002/cffk) 与其前身 [EdgeKey](ht
 - [worker-mailer](https://github.com/zou-yu/worker-mailer) — Workers 环境 SMTP 邮件支持
 - [Cloudflare Workers](https://workers.cloudflare.com/) — 边缘计算平台
 
-## 🏝️ 社区交流
+## 🏝️ 上游社区
+
+MioKey 暂无独立社区；以下为上游 EdgeKey 作者的 Telegram：
+
 - Telegram 群组：https://t.me/edgeKeyChannel
 - Telegram 频道：https://t.me/edgeKeyGroup

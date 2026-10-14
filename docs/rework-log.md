@@ -206,3 +206,59 @@ Demo orders in local D1; local EPAY enabled with fake gateway pay.example.com (b
 - 前台 JS 拆包（Reka/vike 公共块）以进一步降低手机 LCP；部署层压缩/缓存头。
 - 店主内容（分类、商品名、页脚）的多语言需要数据结构支持 → 方向级，不做。
 - 公告条 CTA（需新设置项，同 Cycle 3）。
+
+## Cycle 5 — 首屏性能 / 前台拆包 / 整体复查 / 文档收尾（2026-10-14，提交 b2678c9、e14ca64 及本日志提交）
+
+计划与方案比较：docs/plans/cycle5.md。新探针：miokey-qa/c5_flow.py（完整买家旅程 首页→商品→规格→数量→提交（假 EPAY 网关在浏览器里拦截）→结算页→订单查询→支付结果页，按 视图×语言×主题 扫描横向溢出 / 手机 <44px 目标 / 繁中简体残留 / 英文中文残留 / 控制台错误）、c5/lazy_probe.py（首屏与懒加载 JS 清单）、c5/small_probe.py（375 / 320 / 横屏 844×390、减少动态效果）、final_shots.py（最终截图，结算页走真实下单流程）。
+
+### Findings（按价值排序）
+1. 首屏 LCP 图片要等动画：商品页主图带 animate-fade-in（手机降速 LCP ≈5.9s），首页轮播外层 animate-fade-up；两页都没有 `<link rel=preload as=image>`。
+2. 前台关键路径 JS：语言菜单、账户菜单（Reka DropdownMenu）和首页排序下拉（Reka Select）随首屏同步加载、同步水合，而它们只在点开时才需要；手机上语言菜单甚至是隐藏的（md 以下 hidden）。
+3. 订单查询页（手机）：“删除某邮箱订单”图标按钮 32px、名称硬编码简体（英文下仍读“删除 … 的订单”）；“删除全部匿名订单” 32px；删除确认说明尾句“操作无法撤销。”未翻译。
+4. 支付结果页“打开订单查询”链接手机高 20px。
+5. 结算 / 支付结果页没有 h1（CardTitle 默认 h3），标题层级从 h3 开始。
+6. SEOmator：首页 WebSite/Organization 缺 @id、publisher、logo（建议项）；商品页 90/A、首页 89/B，其余项为本地环境（http、无压缩/HTTP2/安全头、localhost 链接）或误报（mobile-horizontal-scroll 指 4:3 图片固有宽度，实测 375/320/横屏 均无横向溢出）。
+- 无问题项：完整买家旅程 6 组（手机/桌面 × zh-CN/zh-TW/en-US × 浅/深）均能走到支付网关、无控制台错误、无横向溢出；375/320/横屏无溢出，减少动态效果下首页 0 个运行中动画；后台 p2 手机 38 / 桌面 32 全通过；深色扫描结果与 Cycle 4 相同（“浅色块”均为 bg-foreground 的主按钮/公告条/登录品牌面板，属设计；面包屑 “/” 3.41:1 为 aria-hidden 装饰）。
+- 繁中下的简体字与英文下的中文：全部来自店主内容（商品名、分类、店铺副标题、公告、页脚、演示数据），不是界面文案 → 仍按方向级遗留处理。
+
+### Changes
+- 性能（b2678c9）：商品页主图去掉 animate-fade-in 并 `decoding="sync"`；首页轮播外层去掉 fade-up，首张 `decoding="sync"`（fetchpriority=high + eager 保留）；`pages/+Head.vue` 为商品封面 / 首页首张精选（与轮播同一规则：首个有库存商品）输出 `<link rel="preload" as="image" fetchpriority="high">`（内置占位图不预加载）。
+- 拆包（b2678c9）：PublicNav 拆出 `LocaleMenu.vue`（`hydrateOnVisible`，手机隐藏时永不加载）和 `AccountMenu.vue`（`hydrateOnIdle`，退出登录逻辑原样搬移）；首页排序下拉拆成 `SortSelect.vue`（`hydrateOnVisible`，rootMargin 200px）。都用 Vue 3.5 的 `defineAsyncComponent({ hydrate })` 懒水合：SSR 输出不变，Reka 代码在首屏之后才下载。没有手写 manualChunks（与 vike 分包冲突风险高）。
+- a11y / i18n（e14ca64，支付页只改模板，三页 `<script>` 与改前逐字相同，已脚本校验）：结算 / 支付结果页 CardTitle `as="h1"`；OrderList 删除按钮手机 44px（sm 以上 32px）并 `$tr('删除 {name} 的订单')`；“删除全部匿名订单”手机 44px；确认说明尾句 `$tr`；支付结果页链接手机 min-h-11；词典新增 2 条。
+- SEO（e14ca64）：首页 WebSite / Organization 加 `@id`、WebSite.publisher、inLanguage、Organization.logo（仅当店主设置了 http(s) Logo）。
+- 文档：README 补充服务端只读改动说明（品牌字符串、/robots.txt、首页库存聚合）、链接 PRD 与重做记录、技术栈（Tailwind v4、Reka UI、embla）、社区段改为“上游社区”说明；docs/components.md 新增前台组件表（StoreShell/StoreHeader/PublicNav/StoreDrawer/ProductCard/ProductCarousel/SortSelect/StickyBuyBar/AuthShell）与首屏图片约定，修正 StorefrontFooter 描述（已无下拉菜单）。
+
+### 决策
+- 首屏图片只去掉图片本身的动画，标题/文字仍保留 fade-up（不影响图片 LCP，保留 Rawjoy 的入场感）。
+- 懒水合而不是 v-if 延迟挂载：保证 SSR HTML、布局与无障碍名称在水合前就完整，CLS 仍为 0。
+- 商品卡标题里的文字链接（手机高 21px）不改：同一目标有整张 4:3 图片链接，属于 WCAG 2.5.8 的“等效目标”例外。
+- “CFFK” 残留检查：只剩 README/NOTICE 署名段与 docs/miokey-spec.md 记录的内部协议标识（`x-cffk-*` 请求头、localStorage 键、PerPay 幂等键、供应商请求号、媒体探针路径、D1 名 `cffk_db`），用户不可见，改动会破坏已部署站点。
+
+### Tests（最终状态）
+- typecheck 39 = 基线；eslint 0；unit 101 pass / 0 fail；vike build 成功。
+- regress.py 新增 c5-*：product-lcp、home-lcp、sort-lazy、locale-menu-lazy（桌面）、payment-h1、order-delete-targets。四组（手机/桌面 × 前台/后台）全部 0 FAIL。
+- p1_check 前台 30 项无错误/溢出；p2_check 手机 38 / 桌面 32 全通过；c5_flow 6 组买家旅程通过。
+- axe：手机前台 0 违规；桌面后台 0 违规。
+- SEOmator（本地预览）：首页 89/B、商品页 90/A；剩余项为部署层（HTTPS、压缩、HTTP/2、安全头）或可选 schema 建议（aggregateRating、sku/gtin）。
+- 性能（生产预览，iPhone 12 + 4× CPU + 1.6 Mbps/150ms，两次取值）：
+  | 页面 | LCP 前 | LCP 后 | FCP 前 → 后 | 首屏 JS（HTML 引用） |
+  | --- | --- | --- | --- | --- |
+  | 首页 | 4.3–4.8s | 3.85–3.9s | 3.9–4.3 → 3.85–3.9s | 534 KB → 415 KB（菜单/排序在空闲或可见后再取） |
+  | 商品页 | 5.9–6.0s | 3.9–4.1s | 4.1–4.2 → 3.9s | 不变（结算表单 + telefunc + zod 必需） |
+  | 结算页 | 4.9s | 4.6–4.7s | 3.9 → 3.5–3.7s | 不变 |
+  CLS 全部 0。
+
+### Deferred
+- 店主内容（分类、商品名、副标题、公告、页脚）的多语言：需要数据结构支持 → 方向级问题，交给用户决定。
+- 商品页首屏 JS（约 715 KB 未压缩）：结算表单（vee-validate + zod）、telefunc 客户端是首屏可交互所必需；可进一步把地址表单（仅实物商品）拆成异步组件，收益只对实物商品明显。
+- 部署层：Brotli/压缩、缓存头、安全头（X-Frame-Options、CSP、HSTS）由 Cloudflare 配置决定，不在前端仓库范围。
+- 公告条 CTA（需新设置项）。
+
+## Final summary（Phase 1–2 + Cycle 1–5）
+
+- 品牌：MioKey 名称、Logo、链接、更新工作流（mio-co/MioKey）；README/NOTICE 保留“基于 34892002/cffk 修改”、Apache-2.0 与原作者署名；用户可见界面无 CFFK。
+- 前台：Rawjoy（amaeru-web）视觉体系——Archivo + Poppins、expo 缓动、embla 轮播、统一 StoreShell 头尾、搜索/菜单抽屉（焦点循环、Esc、返回键关闭）、商品页规格/数量/吸底购买栏、订单中心、结算与支付结果页、深色模式、zh-CN/zh-TW/en-US 界面文案（含支付页，模板级 `$tr`）。
+- 后台：移植 MioCore 的 AppSidebar 交互（手机点菜单自动收起、折叠图标模式、分组展开记忆），参考 mail 的命令面板/顶栏逻辑；数据表、筛选、分页、对话框统一；手机 44px 触控、表格在手机变卡片、设置子导航胶囊。
+- 质量：axe 0 违规（前台手机、后台桌面），CLS 0，SEOmator 商品页 A；手机降速 LCP 首页 4.6→3.9s、商品页 5.9→4.0s；字体 169→85 KB。
+- 锁定区域：支付/订单/发卡/认证/DB/迁移/cron/供应商同步行为未改；支付页 `<script>` 与上游逻辑一致。相对上游 server/database 的差异仅为品牌字符串、只读 `GET /robots.txt`和 `GET /sitemap.xml`（新增 server/seo/sitemap.ts，在 server/hono.ts 注册）与品牌默认值（站点名、页脚、客服联系方式、邮件发件名、2FA issuer）。
+- QA 工具（/workspace/work/miokey-qa）：p1_check、p2_check、regress（c1–c5 断言）、c4_eval、c4_perf、c5_flow、axe、seomator、final_shots。
