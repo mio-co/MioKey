@@ -64,7 +64,7 @@ MioKey 在 [34892002/cffk](https://github.com/34892002/cffk) 的基础上重做�
 
 | 变量 | 类型 | 说明 |
 | --- | --- | --- |
-| `ADMIN_PATH` | 普通变量 | 后台访问路径，请填写难以猜测的随机字符串，**不含** `/`，例如 `admin-3q9527ko8`。 |
+| `ADMIN_PATH` | Secret（推荐） | 后台访问路径，请填写难以猜测的随机字符串，**不含** `/`，例如 `admin-3q9527ko8`。建议设为 Secret：在 Cloudflare 控制台添加的普通变量会在下次 `wrangler deploy`（含推送触发的自动部署）时被清除，导致后台 404。 |
 | `BETTER_AUTH_SECRET` | Secret | 登录会话签名密钥。请使用强随机值，可通过 `openssl rand -base64 32` 生成。 |
 | `TURNSTILE_SITE_KEY` | 可选普通变量 | Cloudflare Turnstile 站点密钥；启用验证码时必须同时配置 Secret。 |
 | `TURNSTILE_SECRET_KEY` | 可选 Secret | Cloudflare Turnstile 密钥；启用验证码时必须同时配置站点密钥。 |
@@ -144,7 +144,7 @@ bun run deploy            # 迁移、导入默认数据并部署
 
 ## ❓ 常见问题
 
-- **后台无法访问**：确认地址是 `/${ADMIN_PATH}`，并检查部署时填写的 `ADMIN_PATH` 是否正确。
+- **后台无法访问**：确认地址是 `/${ADMIN_PATH}`，并检查部署时填写的 `ADMIN_PATH` 是否正确。如果之前能访问、重新部署后变成 404，多半是 `ADMIN_PATH` 以普通变量添加后被部署清掉了，请改为以 Secret 类型重新添加。
 - **首次部署没有管理员**：访问 `/setup` 创建首个管理员；仅未初始化时可用。
 - **支付回调失败**：在“系统配置 → 站点配置”中设置正确的公开站点地址，再检查对应支付渠道的回调地址和密钥。
 - **邮件通知没有发送**：先在“推送管理 → 电子邮件 → 通道配置”创建、测试并启用一个邮件 Provider，然后检查推送设置与模板。
