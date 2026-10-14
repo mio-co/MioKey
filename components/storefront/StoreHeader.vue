@@ -100,10 +100,13 @@ const locales: { key: StorefrontLocale; label: string }[] = [
       :class="[scrolled ? 'border-border/70 shadow-[0_1px_0_0_rgb(0_0_0/0.02)]' : '', hidden && !menuOpen && !searchOpen && !categoryMenuOpen ? '-translate-y-full' : '']"
     >
       <div :class="['mx-auto flex h-16 items-center gap-3 lg:h-[72px]', narrow ? 'max-w-5xl px-4 sm:px-6' : 'mk-page']">
-        <button type="button" class="-ml-2 grid size-11 place-items-center rounded-full transition-colors hover:bg-muted md:hidden md:size-10" :aria-label="messages.shop.openMenu" :aria-expanded="menuOpen" @click="menuOpen = true">
-          <MenuIcon class="size-5" />
-        </button>
-        <div class="flex min-w-0 flex-1 items-center gap-8 max-md:justify-center">
+        <!-- Mobile: equal-width side columns keep the brand truly centred; -ml-3 puts the icon glyph on the page edge like the right-hand pill. -->
+        <div class="flex flex-1 basis-0 md:hidden">
+          <button type="button" class="-ml-3 grid size-11 place-items-center rounded-full transition-colors hover:bg-muted" :aria-label="messages.shop.openMenu" :aria-expanded="menuOpen" @click="menuOpen = true">
+            <MenuIcon class="size-5" />
+          </button>
+        </div>
+        <div class="flex min-w-0 items-center gap-8 max-md:justify-center md:flex-1">
           <StorefrontBrand />
           <nav class="hidden items-center gap-1 md:flex" :aria-label="messages.nav.main">
             <template v-for="link in navLinks" :key="link.href">
@@ -117,7 +120,7 @@ const locales: { key: StorefrontLocale; label: string }[] = [
             </template>
           </nav>
         </div>
-        <div class="flex shrink-0 items-center">
+        <div class="flex shrink-0 items-center justify-end max-md:flex-1 max-md:basis-0">
           <button type="button" class="grid size-11 place-items-center rounded-full transition-colors hover:bg-muted md:size-10" :aria-label="messages.shop.search" data-testid="header-search" @click="openSearch">
             <SearchIcon class="size-[19px]" />
           </button>
