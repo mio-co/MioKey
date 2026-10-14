@@ -51,6 +51,7 @@ export const onListSupplierBindings = telefuncAction(async (input: { provider?: 
 });
 
 export const onSwitchSupplierBinding = telefuncAction(async (input: unknown) => {
+  const { db } = requireAdmin();
   if (!input || typeof input !== "object") appError("SUPPLIER_SOURCE_INPUT_INVALID");
   const value = input as Record<string, unknown>;
   const provider = supplierProviderSchema.safeParse(value.provider);
@@ -63,7 +64,6 @@ export const onSwitchSupplierBinding = telefuncAction(async (input: unknown) => 
   const result = await fetchSupplierCatalog({ provider: provider.data, normalizedApiOrigin, protocolVersion: protocolVersion.data }, "", 1);
   const product = result.products.find((item) => item.id === productId);
   if (!product) appError("SUPPLIER_PRODUCT_NOT_FOUND");
-  const { db } = requireAdmin();
   return switchSupplierBinding(db, { productSkuId, provider: provider.data, normalizedApiOrigin, protocolVersion: protocolVersion.data, productId, skuId }, product);
 });
 
