@@ -31,7 +31,6 @@ export const errorMessages: Record<string, string> = {
   ADMIN_SELF_STATUS_CHANGE_FORBIDDEN: "不能停用自己的管理员权限。",
   ADMIN_STATUS_CHANGED_RETRY: "管理员状态已被其他操作更新，请刷新后重试。",
   LAST_ACTIVE_ADMIN_REQUIRED: "系统必须保留至少一名活动管理员。",
-  ACCOUNT_DISABLED: "该账号已被禁用，请联系管理员。",
   ADMIN_USER_NOT_FOUND: "用户不存在。",
   ADMIN_USER_USERNAME_INVALID: "用户名需为 3 至 30 位字母、数字、下划线或点。",
   ADMIN_USER_NAME_INVALID: "昵称不能为空且不能超过 100 个字符。",

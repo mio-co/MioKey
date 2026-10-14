@@ -1,5 +1,4 @@
 import type { PerpayConfig } from "@/lib/config-schemas";
-import { appError } from "@/lib/app-error";
 import type { PaymentQueryResult, PaymentNotifyResult } from "./types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -52,8 +51,8 @@ function constantTimeEqual(left: string, right: string) {
 }
 
 async function readResponseJson(response: Response) {
-  if (!/^application\/json(?:;|$)/i.test(response.headers.get("content-type") ?? "")) appError("PERPAY_INVALID_RESPONSE");
-  if (!response.body) appError("PERPAY_INVALID_RESPONSE");
+  if (!/^application\/json(?:;|$)/i.test(response.headers.get("content-type") ?? "")) throw new Error("PERPAY_INVALID_RESPONSE");
+  if (!response.body) throw new Error("PERPAY_INVALID_RESPONSE");
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -62,14 +61,14 @@ async function readResponseJson(response: Response) {
       const next = await reader.read();
       if (next.done) break;
       size += next.value.byteLength;
-      if (size > MAX_RESPONSE_BYTES) appError("PERPAY_RESPONSE_TOO_LARGE");
+      if (size > MAX_RESPONSE_BYTES) throw new Error("PERPAY_RESPONSE_TOO_LARGE");
       chunks.push(next.value);
     }
   } finally { reader.releaseLock(); }
   const bytes = new Uint8Array(size);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-  try { return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as Record<string, unknown>; } catch { appError("PERPAY_INVALID_RESPONSE"); }
+  try { return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) as Record<string, unknown>; } catch { throw new Error("PERPAY_INVALID_RESPONSE"); }
 }
 
 function safeApiCode(value: unknown) {
@@ -109,13 +108,13 @@ async function request(config: PerpayConfig, method: string, path: string, body?
       headers: { "content-type": "application/json", "X-PerPay-Client-Id": "default", "X-PerPay-Timestamp": timestamp, "X-PerPay-Nonce": nonce, "X-PerPay-Signature-Version": "v1", "X-PerPay-Signature": signature },
       ...(bytes.length ? { body: bytes } : {}), redirect: "manual", signal: controller.signal,
     });
-    if (response.status >= 300 && response.status < 400) appError("PERPAY_REDIRECT_REJECTED");
+    if (response.status >= 300 && response.status < 400) throw new Error("PERPAY_REDIRECT_REJECTED");
     const payload = await readResponseJson(response);
     if (!response.ok) {
       const error = payload.error as Record<string, unknown> | undefined;
-      appError(`PERPAY_API_${response.status}_${safeApiCode(error?.code)}`);
+      throw new Error(`PERPAY_API_${response.status}_${safeApiCode(error?.code)}`);
     }
-    if (!payload.data || typeof payload.data !== "object") appError("PERPAY_REQUEST_FAILED");
+    if (!payload.data || typeof payload.data !== "object") throw new Error("PERPAY_REQUEST_FAILED");
     return payload.data as Record<string, unknown>;
   } finally { clearTimeout(timeout); }
 }
@@ -130,18 +129,18 @@ export function createPerpayAdapter(config: PerpayConfig) {
       const requestBody = { idempotency_key: `cffk:${input.orderNo}`, merchant_order_no: input.orderNo, amount_cents: input.amount, product_name: input.subject, ...(input.notifyUrl ? { notify_url: input.notifyUrl } : {}), ...(input.returnUrl ? { return_url: input.returnUrl } : {}) };
       const data = await request(config, "POST", "/api/v1/orders", requestBody);
       const checkout = data.checkout as { checkout_url?: unknown; token?: unknown } | undefined;
-      if (!checkout || typeof checkout.checkout_url !== "string" || !checkout.checkout_url) appError("PERPAY_CREATE_CHECKOUT_MISSING");
+      if (!checkout || typeof checkout.checkout_url !== "string" || !checkout.checkout_url) throw new Error("PERPAY_CREATE_CHECKOUT_MISSING");
       const url = new URL(checkout.checkout_url);
-      if (url.origin !== config.baseUrl || url.username || url.password || url.search || url.hash || !/^\/checkout\/pct1_[A-Za-z0-9_-]{43}$/.test(url.pathname)) appError("PERPAY_CREATE_CHECKOUT_URL_INVALID");
-      if (typeof data.order_id !== "string" || !UUID.test(data.order_id)) appError("PERPAY_CREATE_ORDER_ID_INVALID");
-      if (typeof checkout.token !== "string" || !CHECKOUT_TOKEN.test(checkout.token)) appError("PERPAY_CREATE_CHECKOUT_TOKEN_INVALID");
+      if (url.origin !== config.baseUrl || url.username || url.password || url.search || url.hash || !/^\/checkout\/pct1_[A-Za-z0-9_-]{43}$/.test(url.pathname)) throw new Error("PERPAY_CREATE_CHECKOUT_URL_INVALID");
+      if (typeof data.order_id !== "string" || !UUID.test(data.order_id)) throw new Error("PERPAY_CREATE_ORDER_ID_INVALID");
+      if (typeof checkout.token !== "string" || !CHECKOUT_TOKEN.test(checkout.token)) throw new Error("PERPAY_CREATE_CHECKOUT_TOKEN_INVALID");
       const state = await request(config, "GET", `/api/public/v1/checkouts/${checkout.token}`);
       const instructions = state.payment_instructions as { payable_amount_cents?: unknown; currency?: unknown; collection_code_payload?: unknown } | undefined;
       const payableAmount = instructions?.payable_amount_cents;
       const stateCheckout = state.checkout as Record<string, unknown> | undefined;
       const statePayment = state.payment as Record<string, unknown> | undefined;
       const qrCode = collectionCode(instructions?.collection_code_payload);
-      if (!instructions || state.merchant_order_no !== input.orderNo || state.requested_amount_cents !== input.amount || state.currency !== "CNY" || statePayment?.status !== "UNPAID" || stateCheckout?.status !== "OPEN" || instructions.currency !== "CNY" || typeof payableAmount !== "number" || !Number.isSafeInteger(payableAmount) || payableAmount <= input.amount || !qrCode) appError("PERPAY_CREATE_CHECKOUT_STATE_INVALID");
+      if (!instructions || state.merchant_order_no !== input.orderNo || state.requested_amount_cents !== input.amount || state.currency !== "CNY" || statePayment?.status !== "UNPAID" || stateCheckout?.status !== "OPEN" || instructions.currency !== "CNY" || typeof payableAmount !== "number" || !Number.isSafeInteger(payableAmount) || payableAmount <= input.amount || !qrCode) throw new Error("PERPAY_CREATE_CHECKOUT_STATE_INVALID");
       return { mode: "qr" as const, qrCode, paymentOrderNo: data.order_id, payableAmount };
     },
     verify: async (input: { payload: Record<string, string>; rawBody?: string; rawBodyBytes?: Uint8Array; headers?: Headers }) => {

@@ -8,7 +8,8 @@ import { normalizeOrderEmail } from "@/lib/local-orders";
 import { canConfirmPayment } from "@/lib/order-state";
 import { formatCentsAsYuan } from "@/lib/payment-utils";
 import { validateDiscountForItem, positiveInteger } from "@/server/discount/service";
-import { allocateCardsForPaidOrder, countAvailableCards, isTransactionGuardFailure } from "@/server/inventory/allocator";
+import { allocateCardsForPaidOrder, countAvailableCards } from "@/server/inventory/allocator";
+import { isTransactionGuardFailure } from "@/server/transaction-guard";
 import { reportUnexpectedServerError } from "@/server/error-handling";
 import { validateAddressId, validateAddressInput } from "@/server/address/validation";
 import { generateOrderNo } from "@/server/order/order-number";
@@ -185,7 +186,7 @@ export async function createOrder(database: D1Database, input: CreateOrderInput,
   try {
     await database.batch(statements);
   } catch (cause) {
-    if (String(cause).includes("transactionGuard_value_check")) {
+    if (isTransactionGuardFailure(cause)) {
       if (reservePhysical) {
         const [currentSku] = await db.select({ physicalStock: productSku.physicalStock }).from(productSku).where(eq(productSku.id, sku.id)).limit(1);
         if ((currentSku?.physicalStock ?? 0) < quantity) fail("PRODUCT_STOCK_NOT_ENOUGH");

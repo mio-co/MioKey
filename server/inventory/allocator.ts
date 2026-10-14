@@ -3,12 +3,7 @@ import { createDrizzleDb } from "@/database/drizzle";
 import { card } from "@/database/drizzle/schema";
 import { appError } from "@/lib/app-error";
 import { reportUnexpectedServerError } from "@/server/error-handling";
-
-// Only the transactionGuard CHECK means "another writer changed the rows";
-// any other batch failure is a real D1 error.
-export function isTransactionGuardFailure(cause: unknown) {
-  return String(cause).includes("transactionGuard_value_check");
-}
+import { isTransactionGuardFailure } from "@/server/transaction-guard";
 
 export async function allocateCardsForPaidOrder(database: D1Database, orderId: number, quantity: number, productSkuId: number) {
   const db = createDrizzleDb(database);

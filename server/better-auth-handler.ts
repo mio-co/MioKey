@@ -95,10 +95,12 @@ export const betterAuthHandler = enhance(
     }
 
     if (authRequest.method === "POST" && authPath.endsWith("/sign-in/email")) {
-      const body = await authRequest.clone().json().catch(() => null) as { email?: unknown } | null;
+      const body = await authRequest.clone().json().catch(() => null) as { email?: unknown; password?: unknown } | null;
       const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+      const password = typeof body?.password === "string" ? body.password : null;
       const isAdminLogin = authRequest.headers.get("x-cffk-admin-login") === "1";
-      if (email) {
+      // A non-string password fails Better Auth's body validation for every account alike.
+      if (email && password !== null) {
         const [account] = await getDrizzleDb(runtime)
           .select({ disabledAt: schema.user.disabledAt, rootUserId: schema.adminBootstrap.userId })
           .from(schema.user)
@@ -111,9 +113,14 @@ export const betterAuthHandler = enhance(
           || (!isAdminLogin && Boolean(account?.rootUserId))
           || Boolean(account?.disabledAt);
         if (rejected) {
-          return withAuthNoStore(Response.json(
-            { code: "INVALID_EMAIL_OR_PASSWORD", message: "Invalid email or password" },
-            { status: 401 },
+          // Better Auth hashes the submitted password for unknown users so the
+          // answer takes as long as a real password check; do the same work.
+          const auth = getAuth(runtime, publicOrigin);
+          await (await auth.$context).password.hash(password);
+          // Same status, body bytes and Content-Type as Better Auth's wrong-password APIError.
+          return withAuthNoStore(new Response(
+            JSON.stringify({ message: "Invalid email or password", code: "INVALID_EMAIL_OR_PASSWORD" }),
+            { status: 401, headers: { "content-type": "application/json" } },
           ));
         }
       }

@@ -12,7 +12,7 @@ import { getSiteSettings } from "@/server/site/public-settings";
 import { getProviderDefinition, resolvePaymentUrls } from "./registry";
 import { PaymentLogService } from "./log-service";
 import { paymentRepository } from "./repository";
-import type { PaymentCreateInput, PaymentCreateResult } from "./types";
+import type { PaymentCreateInput, PaymentCreateResult, PaymentResult } from "./types";
 import type { PaymentChannel, PaymentProviderKind } from "./registry";
 
 type RuntimeContext = {
@@ -26,6 +26,14 @@ function safePaymentCreateError(cause: unknown) {
   const name = cause.name.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
   const detail = cause.message.replace(/https?:\/\/[^\s]+/gi, "[url]").replace(/[A-Za-z0-9_-]{32,}/g, "[token]").replace(/\s+/g, " ").trim().slice(0, 100);
   return name ? `PAYMENT_RUNTIME_${name}${detail ? `:${detail}` : ""}` : "PAYMENT_CREATE_FAILED";
+}
+
+// The provider order id is kept server-side (attempt + log): HashPay callbacks
+// are authenticated by naming it, so the buyer must never receive it.
+function clientPayment(payment: PaymentResult): PaymentResult {
+  const visible = { ...payment };
+  delete visible.paymentOrderNo;
+  return visible;
 }
 
 function paymentReturnUrl(value: unknown, orderNo: string) {
@@ -88,7 +96,7 @@ export class PaymentFlowService {
       const result = await adapter.create({ orderNo: created.orderNo, amount: created.amount, subject: `订单 ${created.orderNo}`, channel, notifyUrl: urls.notifyUrl, returnUrl: paymentReturnUrl(urls.returnUrl, created.orderNo) });
       await repository.completeAttempt(attemptId, result.paymentOrderNo);
       await logs.writeBestEffort({ orderId: created.id, provider: provider.provider, orderNo: created.orderNo, paymentOrderNo: result.paymentOrderNo, eventType: "CREATE", verifyStatus: "PENDING", payload: result });
-      return { ...created, payment: result };
+      return { ...created, payment: clientPayment(result) };
     } catch (cause) {
       reportUnexpectedServerError("payment-create", cause, { orderId: created.id, orderNo: created.orderNo, provider: provider.provider });
       await repository.failAttempt(attemptId).catch(() => undefined);
@@ -133,7 +141,7 @@ export class PaymentFlowService {
       const payment = await definition.createAdapter(config).create({ orderNo: record.orderNo, amount: record.amount, subject: `订单 ${record.orderNo}`, channel: record.paymentChannel as PaymentChannel | undefined, notifyUrl: urls.notifyUrl, returnUrl: paymentReturnUrl(urls.returnUrl, record.orderNo) });
       await repository.completeAttempt(attemptId, payment.paymentOrderNo);
       await new PaymentLogService(this.database).writeBestEffort({ orderId: record.id, provider: provider.provider, orderNo: record.orderNo, paymentOrderNo: payment.paymentOrderNo, eventType: "RESUME", verifyStatus: "PENDING", payload: payment });
-      return { orderNo: record.orderNo, amount: record.amount, paymentStatus: "UNPAID", payment };
+      return { orderNo: record.orderNo, amount: record.amount, paymentStatus: "UNPAID", payment: clientPayment(payment) };
     } catch (cause) {
       reportUnexpectedServerError("payment-resume", cause, { orderId: record.id, orderNo: record.orderNo, provider: provider.provider });
       await repository.failAttempt(attemptId).catch(() => undefined);
