@@ -227,10 +227,6 @@
 .mk-marquee { display: flex; width: max-content; animation: mk-marquee var(--mk-marquee-dur, 30s) linear infinite; }
 .mk-marquee:hover { animation-play-state: paused; }
 
-/* Scroll reveal (see lib/ui/reveal.ts). Content stays visible without JS. */
-.mk-js .mk-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo); transition-delay: var(--mk-delay, 0ms); }
-.mk-js .mk-reveal.is-in { opacity: 1; transform: none; }
-
 @media (prefers-reduced-motion: reduce) {
   /* ui-ux-pro-max motion rule: no movement for users who ask for less. Entrances become instant,
      transforms stop animating; colour/opacity feedback on hover/focus stays (short, not motion). */
@@ -238,7 +234,6 @@
   .mk-store * { transition-property: color, background-color, border-color, opacity, box-shadow !important; }
   html:has(.mk-store) { scroll-behavior: auto; }
   .mk-marquee { animation: none; }
-  .mk-js .mk-reveal { opacity: 1; transform: none; transition: none; }
   .mk-card-media img, .mk-sweep::before, .mk-link { transition: none; }
 }
 
@@ -419,6 +414,17 @@
   }
   .mk-skip-link:focus-visible { transform: none; outline: 2px solid var(--foreground); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) { .mk-skip-link { transition: none; } }
+
+  /* Client navigation progress bar (lib/ui/nav-progress.ts). */
+  .mk-nav-progress {
+    position: fixed; inset: 0 0 auto 0; z-index: 200; height: 2px;
+    background: var(--foreground); transform-origin: 0 50%; transform: scaleX(0);
+    opacity: 0; pointer-events: none;
+    transition: transform 0.2s ease-out, opacity 0.3s ease;
+  }
+  .mk-nav-progress[data-state="loading"] { opacity: 1; }
+  .mk-nav-progress[data-state="done"] { opacity: 0; transition: transform 0.15s ease-out, opacity 0.3s ease 0.1s; }
+  @media (prefers-reduced-motion: reduce) { .mk-nav-progress { transition: opacity 0.2s ease; } }
 
 }
 

@@ -155,6 +155,7 @@
 </template>
 
 <script lang="ts" setup>
+import { navigate } from "vike/client/router";
 import { toTypedSchema } from "@vee-validate/zod";
 import { Field as VeeField, Form as VeeForm, useForm } from "vee-validate";
 import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
@@ -368,7 +369,7 @@ async function resumePayment() {
     }
     if (payment.payment?.mode === "qr") {
       cacheQrPayment(payment);
-      window.location.assign(`/checkout?orderNo=${encodeURIComponent(payment.orderNo)}`);
+      await navigate(`/checkout?orderNo=${encodeURIComponent(payment.orderNo)}`);
       return;
     }
     toast.error("暂时无法生成支付信息，请稍后再试。");

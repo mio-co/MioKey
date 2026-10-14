@@ -63,7 +63,7 @@ import { getAdminBreadcrumb } from "@/lib/admin-navigation";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 import { ArrowUpIcon, MoonIcon, SearchIcon, StoreIcon, SunIcon } from "@lucide/vue";
-import { computed, onBeforeUnmount, onMounted, provide, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
 import { usePageContext } from "vike-vue/usePageContext";
 import { SITE_TIMEZONE_KEY } from "@/lib/site-timezone";
 import { onGetSiteSettings } from "@/server/site/admin.telefunc";
@@ -78,10 +78,16 @@ const pageKey = computed(() => pageContext.urlPathname);
 const timezone = ref("Asia/Shanghai");
 provide(SITE_TIMEZONE_KEY, timezone);
 provide("mk-card-title-tag", "h2");
-onMounted(() => {
-  if (isLoginPage.value) return;
-  void runTelefunc(() => onGetSiteSettings(), { notifyError: false }).then((settings) => { timezone.value = settings.timezone; }).catch(() => undefined);
-});
+// Load once the admin shell is shown. Watching (not only onMounted) also covers signing in on the login page, which
+// client-navigates into the shell while this layout stays mounted, so the timezone was never loaded before.
+let timezoneLoaded = false;
+function loadTimezone() {
+  if (timezoneLoaded || isLoginPage.value) return;
+  timezoneLoaded = true;
+  void runTelefunc(() => onGetSiteSettings(), { notifyError: false }).then((settings) => { timezone.value = settings.timezone; }).catch(() => { timezoneLoaded = false; });
+}
+onMounted(loadTimezone);
+watch(isLoginPage, loadTimezone);
 
 const { theme, setTheme } = useStorefrontPreferences();
 function toggleTheme() {

@@ -1,28 +1,13 @@
 <template>
-  <StoreShell :products="data.products" :categories="data.categories">
+  <StoreShell :products="data.products" :categories="navCategories" :product-total="data.products.length">
     <!-- Catalogue -->
     <section id="products" class="mk-page scroll-mt-20 pb-12 pt-1 sm:pb-16 sm:pt-2">
       <h1 class="sr-only">{{ query ? t(messages.storefront.relatedProducts, { count: visibleProducts.length }) : messages.shop.allProducts }}</h1>
 
-      <!-- Toolbar: category tabs scroll on the left, sort pinned to the right; sticks under the header. -->
-      <div class="sticky top-16 z-30 -mx-[var(--mk-pad)] flex items-center gap-3 border-b border-transparent bg-background/85 px-[var(--mk-pad)] py-3 backdrop-blur-xl lg:top-[72px]">
-        <div v-if="data.categories.length" class="mk-no-scrollbar mk-fade-right flex min-w-0 flex-1 gap-2 overflow-x-auto pr-6" role="tablist" :aria-label="messages.storefront.categories">
-          <button
-            v-for="item in categoryTabs"
-            :key="String(item.id)"
-            type="button"
-            role="tab"
-            :aria-selected="selectedCategory === item.id"
-            class="h-11 shrink-0 rounded-full border px-5 text-sm font-medium transition-colors duration-300 hover:border-foreground aria-selected:border-foreground aria-selected:bg-foreground aria-selected:text-background md:h-10"
-            @click="selectCategory(item.id)"
-          >
-            {{ item.name }}<span class="ml-1.5 text-xs tabular-nums opacity-60">{{ item.count }}</span>
-          </button>
-        </div>
-        <div v-else class="flex-1" />
-        <div class="shrink-0">
-          <SortSelect v-model="sort" />
-        </div>
+      <!-- Active category (chosen in the header menu / menu drawer, or ?category= in the URL) with a way back to everything. -->
+      <div v-if="activeCategory" class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground" aria-live="polite" data-testid="active-category">
+        <span>{{ messages.storefront.categories }} · <span class="font-medium text-foreground">{{ activeCategory.name }}</span> · {{ t(messages.shop.resultCount, { count: visibleProducts.length }) }}</span>
+        <a href="/" class="inline-flex h-11 items-center font-medium text-foreground underline-offset-4 hover:underline md:h-8" @click="clearCategory">{{ messages.shop.allProducts }}</a>
       </div>
 
       <!-- Header search lands here as ?q=; show what was searched and a way out. -->
@@ -58,7 +43,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, hydrateOnVisible, onMounted, ref, watch } from "vue";
+import { computed, onMounted, provide, ref, watch } from "vue";
 import { HeadphonesIcon, PackageOpenIcon, ReceiptTextIcon, ShieldCheckIcon, ZapIcon } from "@lucide/vue";
 import { useData } from "vike-vue/useData";
 import { usePageContext } from "vike-vue/usePageContext";
@@ -66,24 +51,22 @@ import ProductCard from "@/components/storefront/ProductCard.vue";
 import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Button } from "@/components/ui/button";
 import type { Data } from "./+data.server";
+import { HOME_CATEGORY_FILTER_KEY } from "@/lib/storefront-categories";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
 
-// Sort menu is SSR-rendered, hydrated (and its Reka Select code fetched) only when scrolled into view.
-const SortSelect = defineAsyncComponent({ loader: () => import("@/components/storefront/SortSelect.vue"), hydrate: hydrateOnVisible({ rootMargin: "200px" }) });
-
-
 const data = useData<Data>();
-const pageContext = usePageContext() as unknown as { user?: { id: string } | null; urlParsed: { search: Record<string, string | undefined> } };
+const pageContext = usePageContext() as unknown as { urlParsed: { search: Record<string, string | undefined> } };
 const { messages, t } = useStorefrontPreferences();
-const initialCategory = Number(pageContext.urlParsed.search.category);
-const selectedCategory = ref<number | null>(Number.isInteger(initialCategory) && data.categories.some((item) => item.id === initialCategory) ? initialCategory : null);
+const parseCategory = (value: string | undefined) => {
+  const id = Number(value);
+  return Number.isInteger(id) && data.categories.some((item) => item.id === id) ? id : null;
+};
+const selectedCategory = ref<number | null>(parseCategory(pageContext.urlParsed.search.category));
 const query = ref(pageContext.urlParsed.search.q?.trim() ?? "");
-const sort = ref<"default" | "price-asc" | "price-desc">("default");
 
-const categoryTabs = computed(() => [
-  { id: null as number | null, name: messages.value.storefront.all, count: data.products.length },
-  ...data.categories.map((item) => ({ id: item.id as number | null, name: item.name, count: data.products.filter((product) => product.categoryId === item.id).length })),
-]);
+// Header dropdown and menu drawer: category list with product counts (the toolbar row was removed).
+const navCategories = computed(() => data.categories.map((item) => ({ id: item.id, name: item.name, count: data.products.filter((product) => product.categoryId === item.id).length })));
+const activeCategory = computed(() => (selectedCategory.value === null ? null : data.categories.find((item) => item.id === selectedCategory.value) ?? null));
 const services = computed(() => [
   { icon: ZapIcon, title: messages.value.shop.services.autoTitle, text: messages.value.shop.services.autoText },
   { icon: ShieldCheckIcon, title: messages.value.shop.services.secureTitle, text: messages.value.shop.services.secureText },
@@ -92,18 +75,26 @@ const services = computed(() => [
 ]);
 const visibleProducts = computed(() => {
   const keyword = query.value.trim().toLowerCase();
-  const list = data.products.filter((product) =>
+  return data.products.filter((product) =>
     (selectedCategory.value === null || product.categoryId === selectedCategory.value)
     && (!keyword || product.name.toLowerCase().includes(keyword) || product.subtitle?.toLowerCase().includes(keyword)),
   );
-  if (sort.value === "default") return list;
-  const direction = sort.value === "price-asc" ? 1 : -1;
-  return [...list].sort((a, b) => (Number(a.minPrice ?? a.price) - Number(b.minPrice ?? b.price)) * direction);
 });
 
-function selectCategory(id: number | null) {
-  selectedCategory.value = id;
+function scrollToProducts() {
+  document.getElementById("products")?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 }
+function selectCategory(id: number | null) {
+  selectedCategory.value = id === null || data.categories.some((item) => item.id === id) ? id : null;
+  if (typeof window !== "undefined") scrollToProducts();
+}
+function clearCategory(event: MouseEvent) {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+  event.preventDefault();
+  selectCategory(null);
+}
+// Lets the header dropdown filter in place instead of a pageContext round trip (see lib/storefront-categories.ts).
+provide(HOME_CATEGORY_FILTER_KEY, { selected: selectedCategory, select: selectCategory });
 
 // Keep ?q= / ?category= in the URL (shareable, survives reload) without adding history entries.
 watch([query, selectedCategory], ([q, category]) => {
@@ -113,10 +104,12 @@ watch([query, selectedCategory], ([q, category]) => {
   if (category !== null) url.searchParams.set("category", String(category)); else url.searchParams.delete("category");
   window.history.replaceState(window.history.state, "", url);
 });
-// Category links in the menu drawer navigate to /?category=… while this page stays mounted.
-watch(() => pageContext.urlParsed.search.category, (value) => {
-  const id = Number(value);
-  selectedCategory.value = Number.isInteger(id) && data.categories.some((item) => item.id === id) ? id : null;
+// Category links in the menu drawer / search sheet navigate to /?category=… (or ?q=…) while this page stays mounted.
+// Watch the parsed URL itself (a new object per navigation), not its values: after an in-place filter change the
+// URL was only replaceState'd, so navigating back to the same ?category= the page loaded with must still apply.
+watch(() => pageContext.urlParsed, (url) => {
+  selectedCategory.value = parseCategory(url.search.category);
+  query.value = url.search.q?.trim() ?? "";
 });
 onMounted(() => {
   if (window.location.hash === "#products" || query.value || selectedCategory.value !== null) {
@@ -126,7 +119,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.mk-fade-right { mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
 .mk-grid-move { transition: transform 0.6s var(--ease-out-expo); }
 .mk-grid-enter-active { transition: opacity 0.45s var(--ease-out-expo), transform 0.45s var(--ease-out-expo); }
 .mk-grid-enter-from { opacity: 0; transform: translateY(12px) scale(0.98); }

@@ -3,18 +3,20 @@ import { computed, ref, watch } from "vue";
 import { ArrowRightIcon, ChevronRightIcon, LanguagesIcon, MenuIcon, MoonIcon, SearchIcon, SunIcon, XIcon } from "@lucide/vue";
 import { usePageContext } from "vike-vue/usePageContext";
 
+import CategoryMenu from "@/components/storefront/CategoryMenu.vue";
 import PublicNav from "@/components/storefront/PublicNav.vue";
 import StoreDrawer from "@/components/storefront/StoreDrawer.vue";
 import StorefrontBrand from "@/components/storefront/StorefrontBrand.vue";
 import { useDrawerHistory } from "@/lib/ui/drawer-history";
+import { useHomeCategoryFilter, useNavCategories } from "@/lib/storefront-categories";
 import { useScrollDirection } from "@/lib/ui/scroll-direction";
 import { useStorefrontPreferences, type StorefrontLocale } from "@/lib/storefront-preferences";
 import defaultProductImage from "@/assets/product_img.jpg?url";
 
 export type HeaderProduct = { id: number | string; name: string; slug: string; subtitle?: string | null; coverImage?: string | null; price: string; categoryName?: string | null; minPrice?: string; skuCount?: number };
-export type HeaderCategory = { id: number; name: string };
+export type HeaderCategory = { id: number; name: string; count?: number };
 
-const props = withDefaults(defineProps<{ products?: HeaderProduct[]; categories?: HeaderCategory[]; narrow?: boolean }>(), { products: () => [], categories: () => [], narrow: false });
+const props = withDefaults(defineProps<{ products?: HeaderProduct[]; categories?: HeaderCategory[]; productTotal?: number | null; narrow?: boolean }>(), { products: () => [], categories: () => [], productTotal: null, narrow: false });
 
 type Site = { name?: string | null; notice?: string | null };
 type PageContext = ReturnType<typeof usePageContext> & { site?: Site | null; user?: { id: string } | null };
@@ -24,6 +26,10 @@ const { scrolled, hidden } = useScrollDirection();
 
 const menuOpen = ref(false);
 const searchOpen = ref(false);
+const categoryMenuOpen = ref(false);
+// Pages without the catalogue in their data (order lookup, account…) fetch the category list when the menu opens.
+const { categories: menuCategories, ensure: ensureCategories } = useNavCategories(() => props.categories, () => props.productTotal);
+watch(menuOpen, (value) => { if (value) void ensureCategories(); });
 const query = ref("");
 const { navigateFromDrawer: navigateFromMenu } = useDrawerHistory(menuOpen, (value) => { menuOpen.value = value; });
 const { navigateFromDrawer: navigateFromSearch } = useDrawerHistory(searchOpen, (value) => { searchOpen.value = value; });
@@ -31,7 +37,13 @@ const { navigateFromDrawer: navigateFromSearch } = useDrawerHistory(searchOpen, 
 const notice = computed(() => pageContext.site?.notice?.trim() || "");
 const user = computed(() => pageContext.user ?? null);
 const pathname = computed(() => pageContext.urlPathname || "/");
-const currentCategory = computed(() => (pathname.value === "/" ? pageContext.urlParsed?.search?.category ?? null : null));
+const homeFilter = useHomeCategoryFilter();
+// On home the filter can change in place (header dropdown) without a navigation, so prefer the page's own state.
+const currentCategory = computed(() => {
+  if (pathname.value !== "/") return null;
+  if (homeFilter) return homeFilter.selected.value === null ? null : String(homeFilter.selected.value);
+  return pageContext.urlParsed?.search?.category ?? null;
+});
 const navLinks = computed(() => [
   { href: "/", label: messages.value.shop.home, active: pathname.value === "/" },
   { href: "/#products", label: messages.value.shop.allProducts, active: pathname.value.startsWith("/product/") },
@@ -57,11 +69,6 @@ function submitSearch() {
   navigateFromSearch(keyword ? `/?q=${encodeURIComponent(keyword)}#products` : "/#products");
 }
 function openSearch() { menuOpen.value = false; searchOpen.value = true; }
-function goHomeSection(event: MouseEvent, href: string) {
-  if (!href.startsWith("/#") || pathname.value !== "/") return;
-  event.preventDefault();
-  document.querySelector(href.slice(1))?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-}
 const locales: { key: StorefrontLocale; label: string }[] = [
   { key: "zh-CN", label: "简体中文" },
   { key: "zh-TW", label: "繁體中文" },
@@ -84,7 +91,7 @@ const locales: { key: StorefrontLocale; label: string }[] = [
 
     <header
       class="sticky top-0 z-50 border-b border-transparent bg-background/90 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-500 ease-out-expo supports-[backdrop-filter]:bg-background/75"
-      :class="[scrolled ? 'border-border/70 shadow-[0_1px_0_0_rgb(0_0_0/0.02)]' : '', hidden && !menuOpen && !searchOpen ? '-translate-y-full' : '']"
+      :class="[scrolled ? 'border-border/70 shadow-[0_1px_0_0_rgb(0_0_0/0.02)]' : '', hidden && !menuOpen && !searchOpen && !categoryMenuOpen ? '-translate-y-full' : '']"
     >
       <div :class="['mx-auto flex h-16 items-center gap-3 lg:h-[72px]', narrow ? 'max-w-5xl px-4 sm:px-6' : 'mk-page']">
         <button type="button" class="-ml-2 grid size-11 place-items-center rounded-full transition-colors hover:bg-muted md:hidden md:size-10" :aria-label="messages.shop.openMenu" :aria-expanded="menuOpen" @click="menuOpen = true">
@@ -93,14 +100,15 @@ const locales: { key: StorefrontLocale; label: string }[] = [
         <div class="flex min-w-0 flex-1 items-center gap-8 max-md:justify-center">
           <StorefrontBrand />
           <nav class="hidden items-center gap-1 md:flex" :aria-label="messages.nav.main">
-            <a
-              v-for="link in navLinks"
-              :key="link.href"
-              :href="link.href"
-              :aria-current="link.active ? 'page' : undefined"
-              class="rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-300 hover:bg-foreground hover:text-background aria-[current=page]:bg-foreground aria-[current=page]:text-background"
-              @click="goHomeSection($event, link.href)"
-            >{{ link.label }}</a>
+            <template v-for="link in navLinks" :key="link.href">
+              <CategoryMenu v-if="link.href === '/#products'" :categories="categories" :total="productTotal" :active="link.active" @update:open="categoryMenuOpen = $event" />
+              <a
+                v-else
+                :href="link.href"
+                :aria-current="link.active ? 'page' : undefined"
+                class="rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-300 hover:bg-foreground hover:text-background aria-[current=page]:bg-foreground aria-[current=page]:text-background"
+              >{{ link.label }}</a>
+            </template>
           </nav>
         </div>
         <div class="flex shrink-0 items-center">
@@ -183,11 +191,11 @@ const locales: { key: StorefrontLocale; label: string }[] = [
           <a v-if="user" href="/account" class="mk-menu-item mk-display flex items-center justify-between border-b py-4 text-[19px]" :style="{ '--i': navLinks.length }" @click="navigateFromMenu('/account', $event)">{{ messages.nav.accountSettings }}<ChevronRightIcon class="size-5 text-muted-foreground" /></a>
           <button type="button" class="mk-menu-item mk-display flex w-full items-center justify-between border-b py-4 text-left text-[19px]" :style="{ '--i': navLinks.length + 1 }" @click="openSearch">{{ messages.shop.search }}<SearchIcon class="size-5 text-muted-foreground" /></button>
 
-          <div v-if="categories.length" class="mt-6">
+          <div v-if="menuCategories.length" class="mt-6">
             <p class="mb-2 text-sm text-muted-foreground">{{ messages.storefront.categories }}</p>
             <div class="flex flex-wrap gap-2">
               <a
-                v-for="category in categories"
+                v-for="category in menuCategories"
                 :key="category.id"
                 :href="`/?category=${category.id}#products`"
                 :aria-current="currentCategory === String(category.id) ? 'page' : undefined"

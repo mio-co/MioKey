@@ -122,14 +122,10 @@ export async function getPublicCatalog(database: D1Database): Promise<PublicCata
       .orderBy(asc(productV2.sort), asc(productV2.id)),
   ]);
 
-  const categoryIds = [...new Set(products.flatMap((item) => (item.categoryId === null ? [] : [item.categoryId])))];
-  const categoryNames = categoryIds.length
-    ? await db
-        .select({ id: category.id, name: category.name })
-        .from(category)
-        .where(and(eq(category.status, "ACTIVE"), inArray(category.id, categoryIds)))
-    : [];
-  const categoryNameById = new Map(categoryNames.map((item) => [item.id, item.name]));
+  // Products are inner-joined to ACTIVE categories and `categories` already holds every ACTIVE category, so the
+  // names of the categories in use come from that list (this used to be a separate, sequential D1 round trip).
+  const categoryIds = new Set(products.flatMap((item) => (item.categoryId === null ? [] : [item.categoryId])));
+  const categoryNameById = new Map(categories.filter((item) => categoryIds.has(item.id)).map((item) => [item.id, item.name]));
   const itemIds = products.map((item) => item.id);
   const skuRows = itemIds.length
     ? await db.select({ productId: productSku.productId, id: productSku.id, price: productSku.price, deliveryType: productSku.deliveryType, physicalStock: productSku.physicalStock, minBuy: productSku.minBuy, maxBuy: productSku.maxBuy })
@@ -151,4 +147,13 @@ export async function getPublicCatalog(database: D1Database): Promise<PublicCata
       return [{ ...item, price: formatCentsAsYuan(sku.price), deliveryType: sku.deliveryType, physicalStock: sku.physicalStock, availableStock: sku.deliveryType === "CARD_AUTO" ? cardStockBySkuId.get(sku.id) ?? 0 : sku.deliveryType === "SUPPLIER" ? null : sku.physicalStock, minBuy: sku.minBuy, maxBuy: sku.maxBuy, categoryName: item.categoryId === null ? null : categoryNameById.get(item.categoryId) ?? null }];
     }),
   };
+}
+
+export type CategorySummary = { id: number; name: string; count: number };
+
+/** Category list with product counts for storefront navigation (header dropdown, menu drawer). Pure, derived from the catalog. */
+export function summarizeCategories(catalog: PublicCatalog): CategorySummary[] {
+  const counts = new Map<number, number>();
+  for (const item of catalog.products) if (item.categoryId !== null) counts.set(item.categoryId, (counts.get(item.categoryId) ?? 0) + 1);
+  return catalog.categories.map((item) => ({ id: item.id, name: item.name, count: counts.get(item.id) ?? 0 }));
 }

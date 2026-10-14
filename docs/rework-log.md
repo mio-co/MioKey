@@ -262,3 +262,13 @@ Demo orders in local D1; local EPAY enabled with fake gateway pay.example.com (b
 - 质量：axe 0 违规（前台手机、后台桌面），CLS 0，SEOmator 商品页 A；手机降速 LCP 首页 4.6→3.9s、商品页 5.9→4.0s；字体 169→85 KB。
 - 锁定区域：支付/订单/发卡/认证/DB/迁移/cron/供应商同步行为未改；支付页 `<script>` 与上游逻辑一致。相对上游 server/database 的差异仅为品牌字符串、只读 `GET /robots.txt`和 `GET /sitemap.xml`（新增 server/seo/sitemap.ts，在 server/hono.ts 注册）与品牌默认值（站点名、页脚、客服联系方式、邮件发件名、2FA issuer）。
 - QA 工具（/workspace/work/miokey-qa）：p1_check、p2_check、regress（c1–c5 断言）、c4_eval、c4_perf、c5_flow、axe、seomator、final_shots。
+
+## 首页分类导航与页面切换响应（2026-10）
+
+- 首页：移除置顶的分类/排序工具栏（含 `SortSelect`，排序回到默认顺序）；分类仍由 `?category=<id>` 驱动，选中时网格上方显示一行「商品分类 · 名称 · 共 n 件商品 · 全部商品」。
+- 桌面页头：「全部商品」改为 `CategoryMenu` 分类下拉（悬停 90ms 打开 / 180ms 关闭、键盘 ↑↓/Home/End、点击/触屏切换、Esc 关闭并还原焦点、点击外部或 Tab 离开关闭）；首页内就地筛选（不再请求 pageContext），其他页客户端跳转 `/?category=<id>`。没有目录数据的页面（订单查询、账户、结算…）在首次打开时请求 `GET /api/catalog/categories`（`max-age=60`）。
+- 手机：分类只在菜单抽屉里；抽屉在任何页面都会补拉分类列表。
+- 页面切换：`prefetch: { staticAssets: "hover", pageContext: 5000 }`（悬停即预取页面数据）；`onPageTransitionStart/End` 顶部 2px 进度条（80ms 后才显示，预取命中时不闪）；下单/续付后跳结算页、订单页改用客户端 `navigate()`，不再整页刷新。
+- 服务端数据：`getPublicCatalog` 去掉一次重复的分类名查询；首页两次 SKU 查询合并为一次；商品页详情、支付方式与目录并行读取（顺序 D1 往返：首页 7→5，商品页 7→3）。
+- 修复：首页停留时从页头搜索 `?q=` 不生效、筛选被 replaceState 后再次选择同一分类不生效；后台在登录页客户端跳入后不加载站点时区。
+- 删除无引用代码：`ProductCarousel.vue`、`Reveal.vue`、`lib/ui/reveal.ts` 与对应 CSS、排序文案。

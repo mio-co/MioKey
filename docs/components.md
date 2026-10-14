@@ -217,11 +217,11 @@ import AdminSidebar from "@/components/AdminSidebar.vue";
 | 组件 | 用途 | 主要 Props / 插槽 |
 | --- | --- | --- |
 | `StoreShell` | 页头（`StoreHeader`）+ 内容区 + 页脚；设置本地化标签页标题 | `products` / `categories`（搜索与菜单抽屉数据）、`narrow`、`tone`（`plain`/`muted`）、`bottomBar`（为底部吸附购买栏留空）；默认插槽 |
-| `StoreHeader` | 滚动时隐藏/显示的粘性页头、搜索抽屉、手机菜单抽屉 | `products`、`categories`、`narrow` |
+| `StoreHeader` | 滚动时隐藏/显示的粘性页头（桌面「全部商品」为 `CategoryMenu` 分类下拉）、搜索抽屉、手机菜单抽屉（含商品分类） | `products`、`categories`、`productTotal`、`narrow` |
 | `PublicNav` | 语言、主题、登录/账户菜单。`LocaleMenu`（仅 md 以上可见时才水合）与 `AccountMenu`（空闲时水合）用 `defineAsyncComponent` + `hydrateOn*` 延迟加载 Reka 下拉代码，SSR 输出不变 | 无 |
 | `StoreDrawer` | 侧滑抽屉：滚动锁定、Esc 关闭、Tab 焦点循环、返回键关闭（配合 `useDrawerHistory`） | 作用域插槽 `close` |
-| `ProductCard` / `ProductCarousel` | 商品卡与首页精选轮播（embla，自动播放在悬停/聚焦/触摸与减少动态效果时暂停） | `product` + `eager` / `products` |
-| `SortSelect` | 首页排序下拉；首页以 `hydrateOnVisible` 懒水合 | `v-model`（`default`/`price-asc`/`price-desc`） |
+| `ProductCard` | 商品卡（首页商品网格、前 4 张图片 eager 加载） | `product` + `eager` |
+| `CategoryMenu` | 桌面端页头「全部商品」分类下拉（悬停/键盘/点击打开，Esc 关闭；首页内就地筛选，其他页跳转 `/?category=<id>`） | `categories`（含 `count`）、`total`、`active`；`update:open` |
 | `StickyBuyBar` | 目标元素滚出视口后出现的底部购买栏 | `target`（选择器）；默认插槽 |
 | `AuthShell` | 登录/注册/找回密码等认证页外壳 | 默认插槽、`aside` 插槽 |
 

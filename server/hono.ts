@@ -12,6 +12,7 @@ import { PaymentLogService } from "./payment/log-service";
 import { getTurnstileConfig } from "@/lib/turnstile-config";
 import { env } from "./env";
 import { handleDujiaoSupplierCallback } from "./supplier/callback";
+import { getPublicCatalog, summarizeCategories } from "./catalog/public";
 
 function getApp() {
   const app = new Hono<{ Bindings: Record<string, unknown> & { DB: D1Database } }>();
@@ -46,6 +47,11 @@ function getApp() {
   app.post("/api/suppliers/dujiao-next/callback/:accountId", async (context) => handleDujiaoSupplierCallback(context.env.DB, context.req.param("accountId"), context.req.raw));
   registerMediaRoutes(app);
   registerSeoRoutes(app);
+  // Storefront navigation (header category dropdown / menu drawer) on pages whose data does not carry the catalog.
+  app.get("/api/catalog/categories", async (context) => {
+    const catalog = await getPublicCatalog(context.env.DB);
+    return context.json({ total: catalog.products.length, categories: summarizeCategories(catalog) }, 200, { "cache-control": "public, max-age=60" });
+  });
   app.get("/api/security/turnstile", (context) => {
     const config = getTurnstileConfig(env);
     return context.json({ enabled: config.enabled, siteKey: config.enabled ? config.siteKey : null });

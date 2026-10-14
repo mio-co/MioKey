@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { and, eq, inArray, min, count, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { createDrizzleDb } from "@/database/drizzle";
 import { card, productSku } from "@/database/drizzle/schema";
 import { getPublicCatalog } from "@/server/catalog/public";
@@ -18,20 +18,20 @@ export async function data() {
   return withServerDataErrorHandling("page data: index", {}, async () => {
     const catalog = await getPublicCatalog(env.DB);
     const ids = catalog.products.map((item) => item.id);
-    const ranges = ids.length
-      ? await createDrizzleDb(env.DB)
-          .select({ productId: productSku.productId, minPrice: min(productSku.price), skuCount: count() })
-          .from(productSku)
-          .where(and(inArray(productSku.productId, ids), eq(productSku.status, "ACTIVE")))
-          .groupBy(productSku.productId)
-      : [];
-    const rangeById = new Map(ranges.map((item) => [item.productId, item]));
     const db = createDrizzleDb(env.DB);
+    // One read of the ACTIVE SKUs gives both the price range (min price + SKU count) and the stock aggregation;
+    // this used to be two sequential queries over the same rows.
     const skus = ids.length
-      ? await db.select({ id: productSku.id, productId: productSku.productId, deliveryType: productSku.deliveryType, physicalStock: productSku.physicalStock })
+      ? await db.select({ id: productSku.id, productId: productSku.productId, price: productSku.price, deliveryType: productSku.deliveryType, physicalStock: productSku.physicalStock })
           .from(productSku)
           .where(and(inArray(productSku.productId, ids), eq(productSku.status, "ACTIVE")))
       : [];
+    const rangeById = new Map<number, { minPrice: number; skuCount: number }>();
+    for (const sku of skus) {
+      const range = rangeById.get(sku.productId);
+      if (range) { range.minPrice = Math.min(range.minPrice, sku.price); range.skuCount += 1; }
+      else rangeById.set(sku.productId, { minPrice: sku.price, skuCount: 1 });
+    }
     const cardSkuIds = skus.filter((sku) => sku.deliveryType === "CARD_AUTO").map((sku) => sku.id);
     const cardRows = cardSkuIds.length
       ? await db.select({ skuId: card.productSkuId, n: sql<number>`count(*)` }).from(card).where(and(inArray(card.productSkuId, cardSkuIds), eq(card.status, "UNUSED"))).groupBy(card.productSkuId)
