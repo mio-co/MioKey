@@ -112,7 +112,10 @@ export function getAuthConfig(runtime?: RuntimeAdapter, publicOrigin?: string, o
           const body = SIGN_IN_EMAIL_BODY.safeParse(ctx.body ?? {});
           if (!body.success) return;
           try {
-            await formCsrfMiddleware(ctx);
+            // Silent logger: the endpoint re-runs this middleware and logs the real rejection once.
+            const quiet = () => {};
+            const logger = { ...ctx.context.logger, error: quiet, warn: quiet, info: quiet };
+            await formCsrfMiddleware({ ...ctx, context: { ...ctx.context, logger } } as typeof ctx);
           } catch {
             return;
           }
