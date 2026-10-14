@@ -46,9 +46,9 @@
                   <Field :data-invalid="errors.length > 0">
                     <FieldLabel for="site-timezone">站点时区</FieldLabel>
                     <Combobox :model-value="componentField.modelValue" open-on-focus open-on-click @update:model-value="componentField['onUpdate:modelValue']">
-                      <ComboboxAnchor class="flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs">
+                      <ComboboxAnchor class="flex h-11 w-full items-center rounded-md border border-input bg-transparent py-1 pr-1 pl-3 text-sm shadow-xs md:h-9">
                         <ComboboxInput id="site-timezone" :display-value="timezoneDisplayValue" placeholder="搜索标准时区" :aria-invalid="errors.length > 0" />
-                        <ComboboxTrigger class="ml-auto"><ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" /></ComboboxTrigger>
+                        <ComboboxTrigger class="ml-auto grid size-9 shrink-0 place-items-center rounded-md hover:bg-muted md:size-7" aria-label="展开时区列表"><ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" /></ComboboxTrigger>
                       </ComboboxAnchor>
                       <ComboboxList class="w-(--reka-combobox-trigger-width)">
                         <ComboboxViewport class="max-h-72 overflow-y-scroll">

@@ -50,7 +50,7 @@
             <div class="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
               <div class="grid content-start gap-3">
                 <p class="text-sm font-semibold"><span class="text-destructive">*</span> {{ messages.productCheckout.quantity }}</p>
-                <div class="mk-qty inline-flex h-12 w-fit items-center rounded-full border">
+                <div class="mk-qty inline-flex h-12 w-fit items-center rounded-full border has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-foreground has-[input:focus-visible]:ring-offset-2 has-[input:focus-visible]:ring-offset-background">
                   <button type="button" class="grid size-12 place-items-center rounded-full transition-colors hover:bg-muted disabled:opacity-40" :aria-label="messages.shop.product.quantityDecrease" :disabled="quantity <= selectedSku.minBuy" @click="quantity = Math.max(selectedSku.minBuy, Number(quantity) - 1)"><MinusIcon class="size-4" /></button>
                   <input v-model.number="quantity" type="number" inputmode="numeric" :min="selectedSku.minBuy" :max="purchaseLimit" required :aria-label="messages.productCheckout.quantity" class="h-full w-12 bg-transparent text-center text-[15px] font-semibold tabular-nums outline-none" />
                   <button type="button" class="grid size-12 place-items-center rounded-full transition-colors hover:bg-muted disabled:opacity-40" :aria-label="messages.shop.product.quantityIncrease" :disabled="quantity >= purchaseLimit" @click="quantity = Math.min(purchaseLimit, Number(quantity) + 1)"><PlusIcon class="size-4" /></button>

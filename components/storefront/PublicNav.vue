@@ -62,7 +62,6 @@ import { toast } from "vue-sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { authClient } from "@/lib/auth-client";
 import enUS from "@/lib/i18n/en-US";
 import zhCN from "@/lib/i18n/zh-CN";
 import zhTW from "@/lib/i18n/zh-TW";
@@ -81,6 +80,8 @@ async function signOut() {
   if (signingOut.value) return;
   signingOut.value = true;
   try {
+    // Loaded on demand so the better-auth client stays out of every storefront page bundle.
+    const { authClient } = await import("@/lib/auth-client");
     const result = await authClient.signOut();
     if (result.error) {
       toast.error(messages.value.nav.signOutFailed);

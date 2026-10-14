@@ -31,7 +31,7 @@ function isActive(path: string) {
           v-for="item in items"
           :key="item.path"
           :href="basePath + item.path"
-          class="shrink-0 rounded-full px-4 py-2 text-sm transition-colors hover:bg-muted lg:rounded-xl"
+          class="mk-touch-pill shrink-0 rounded-full px-4 py-2 text-sm transition-colors hover:bg-muted lg:rounded-xl"
           :class="isActive(item.path) ? 'bg-foreground font-medium text-background hover:bg-foreground' : 'text-muted-foreground'"
           :aria-current="isActive(item.path) ? 'page' : undefined"
         >

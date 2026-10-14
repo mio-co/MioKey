@@ -25,7 +25,21 @@ let opener: HTMLElement | null = null;
 useScrollLock(toRef(props, "open"));
 
 function close() { emit("update:open", false); }
-function onKey(event: KeyboardEvent) { if (props.open && event.key === "Escape") close(); }
+const focusable = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+
+/** Esc closes; Tab / Shift+Tab cycle inside the panel so keyboard focus never slips behind the modal. */
+function onKey(event: KeyboardEvent) {
+  if (!props.open) return;
+  if (event.key === "Escape") { close(); return; }
+  if (event.key !== "Tab" || !panel.value) return;
+  const items = [...panel.value.querySelectorAll<HTMLElement>(focusable)].filter((item) => item.getClientRects().length > 0);
+  if (!items.length) { event.preventDefault(); panel.value.focus(); return; }
+  const first = items[0]!, last = items[items.length - 1]!;
+  const active = document.activeElement as HTMLElement | null;
+  const inside = !!active && panel.value.contains(active);
+  if (event.shiftKey && (!inside || active === first || active === panel.value)) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && (!inside || active === last)) { event.preventDefault(); first.focus(); }
+}
 
 watch(() => props.open, async (value) => {
   if (value) {

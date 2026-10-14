@@ -69,7 +69,7 @@
       </div>
 
       <TransitionGroup v-if="visibleProducts.length" tag="div" name="mk-grid" class="mt-6 grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 md:grid-cols-3 lg:gap-x-7 lg:gap-y-10 xl:grid-cols-4">
-        <ProductCard v-for="(product, index) in visibleProducts" :key="product.id" :product="product" :eager="index < 4" />
+        <ProductCard v-for="(product, index) in visibleProducts" :key="product.id" :product="product" :eager="index < 4 && !featured.length" />
       </TransitionGroup>
 
       <div v-else class="mt-8 grid place-items-center rounded-[24px] border border-dashed px-6 py-20 text-center">
