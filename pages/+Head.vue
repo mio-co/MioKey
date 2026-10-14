@@ -7,6 +7,8 @@
   <component :is="'script'" :innerHTML="bootScript" />
   <link rel="preload" href="/fonts/archivo-Medium.woff2" as="font" type="font/woff2" crossorigin="" />
   <link rel="preload" href="/fonts/poppins-600-normal.woff2" as="font" type="font/woff2" crossorigin="" />
+  <!-- LCP image (product cover / first hero slide) starts downloading with the document head. -->
+  <link v-if="lcpImage" rel="preload" as="image" :href="lcpImage" fetchpriority="high" />
   <link rel="icon" :href="iconUrl" />
   <link rel="apple-touch-icon" :href="iconUrl" />
   <link v-if="seo.canonicalUrl" rel="canonical" :href="seo.canonicalUrl" />
@@ -36,7 +38,7 @@ import { storefrontPageTitle } from "@/lib/seo/page-title";
 
 type Site = { name?: string; subtitle?: string | null; siteUrl?: string | null; logo?: string | null; logoIcon?: string | null };
 type ProductData = { name?: string; slug?: string; subtitle?: string | null; description?: string | null; coverImage?: string | null; categoryName?: string | null; skus?: { name?: string; price?: string; availableStock?: number | null; minBuy?: number }[] };
-type HomeData = { products?: { name?: string; coverImage?: string | null }[] };
+type HomeData = { products?: { name?: string; coverImage?: string | null; availableStock?: number | null }[] };
 type SeoPageContext = { site?: Site; data?: ProductData & HomeData; urlPathname?: string; routeParams?: { adminPath?: string }; urlParsed?: { origin?: string } };
 
 const pageContext = usePageContext() as SeoPageContext;
@@ -46,6 +48,18 @@ const isPrivatePage = computed(() => {
   return Boolean(pageContext.routeParams?.adminPath) || pathname === "/setup" || pathname === "/order" || pathname === "/checkout" || pathname === "/payment-result" || pathname.startsWith("/_error");
 });
 const siteUrl = computed(() => normalizeOrigin(pageContext.site?.siteUrl) || normalizeOrigin(pageContext.urlParsed?.origin));
+/** Mirrors what the page renders first: product cover, or the home carousel's first slide (first in-stock product). The bundled placeholder is not preloaded. */
+const lcpImage = computed(() => {
+  const pathname = pageContext.urlPathname || "/";
+  const data = pageContext.data;
+  if (pathname.startsWith("/product/") && data?.name) return data.coverImage || null;
+  if (pathname === "/" && data?.products?.length) {
+    const inStock = data.products.filter((item) => item.availableStock !== 0);
+    const first = (inStock.length ? inStock : data.products)[0];
+    return first.coverImage || null;
+  }
+  return null;
+});
 const iconUrl = computed(() => pageContext.site?.logoIcon || pageContext.site?.logo || defaultLogoUrl);
 const seo = computed(() => {
   const siteName = pageContext.site?.name || "MioKey";

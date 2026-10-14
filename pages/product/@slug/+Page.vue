@@ -13,7 +13,7 @@
         <div class="min-w-0">
           <div class="lg:sticky lg:top-24">
             <div class="mk-card-media aspect-[4/3]">
-              <img :src="data.coverImage || defaultProductImage" :alt="data.name" width="1200" height="900" class="size-full animate-fade-in object-cover" fetchpriority="high" />
+              <img :src="data.coverImage || defaultProductImage" :alt="data.name" width="1200" height="900" class="size-full object-cover" fetchpriority="high" decoding="sync" />
             </div>
           </div>
         </div>

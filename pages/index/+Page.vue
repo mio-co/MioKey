@@ -14,7 +14,7 @@
           <a :href="user ? '/account/order' : '/order'" class="inline-flex h-12 items-center rounded-full border border-foreground/15 px-6 text-[15px] font-semibold transition-colors duration-300 hover:border-foreground hover:bg-foreground hover:text-background">{{ messages.shop.heroSecondary }}</a>
         </div>
       </div>
-      <div v-if="featured.length" class="min-w-0 animate-fade-up [animation-delay:200ms]">
+      <div v-if="featured.length" class="min-w-0">
         <ProductCarousel :products="featured" />
       </div>
     </section>
@@ -41,14 +41,7 @@
             <SearchIcon class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input v-model="query" type="search" class="pl-10!" :placeholder="messages.storefront.searchProducts" :aria-label="messages.storefront.searchProducts" />
           </div>
-          <Select v-model="sort">
-            <SelectTrigger class="w-auto min-w-36" :aria-label="messages.shop.sortLabel"><SelectValue /></SelectTrigger>
-            <SelectContent class="rounded-2xl">
-              <SelectItem value="default">{{ messages.shop.sortDefault }}</SelectItem>
-              <SelectItem value="price-asc">{{ messages.shop.sortPriceAsc }}</SelectItem>
-              <SelectItem value="price-desc">{{ messages.shop.sortPriceDesc }}</SelectItem>
-            </SelectContent>
-          </Select>
+          <SortSelect v-model="sort" />
         </div>
       </div>
 
@@ -83,7 +76,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, hydrateOnVisible, onMounted, ref, watch } from "vue";
 import { ArrowDownIcon, HeadphonesIcon, PackageOpenIcon, ReceiptTextIcon, SearchIcon, ShieldCheckIcon, ZapIcon } from "@lucide/vue";
 import { useData } from "vike-vue/useData";
 import { usePageContext } from "vike-vue/usePageContext";
@@ -92,9 +85,11 @@ import ProductCarousel from "@/components/storefront/ProductCarousel.vue";
 import StoreShell from "@/components/storefront/StoreShell.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Data } from "./+data.server";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
+
+// Sort menu is SSR-rendered, hydrated (and its Reka Select code fetched) only when scrolled into view.
+const SortSelect = defineAsyncComponent({ loader: () => import("@/components/storefront/SortSelect.vue"), hydrate: hydrateOnVisible({ rootMargin: "200px" }) });
 
 type Site = { name: string; subtitle: string | null; logo: string | null; notice: string | null; footerText: string | null };
 
