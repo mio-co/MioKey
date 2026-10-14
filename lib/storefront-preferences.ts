@@ -64,6 +64,11 @@ function replaceParams(value: string, params: Record<string, string | number>) {
   return value.replace(/\{(\w+)\}/g, (_, key: string) => String(params[key] ?? ""));
 }
 
+/** Current storefront locale for render-time helpers (reactive when read inside a render). */
+export function currentStorefrontLocale(): StorefrontLocale {
+  return locale.value;
+}
+
 export function useStorefrontPreferences(): {
   locale: typeof locale;
   theme: typeof theme;

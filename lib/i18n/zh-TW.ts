@@ -5,7 +5,7 @@ const traditionalCharacters: Record<string, string> = { "办": "辦", "与": "�
 // Taiwan wording for common Mainland terms, applied before the character map (reviewed in Cycle 2).
 const phrases: [string, string][] = [["登录", "登入"], ["保存", "儲存"], ["搜索", "搜尋"], ["默认", "預設"], ["信息", "資訊"], ["设置", "設定"], ["菜单", "選單"], ["联系", "聯絡"], ["链接", "連結"], ["字符", "字元"], ["加载", "載入"], ["支持", "支援"], ["创建", "建立"], ["发送", "傳送"], ["打开", "開啟"], ["刷新", "重新整理"], ["邮箱", "電子郵件"], ["数字商品", "數位商品"], ["视频", "影片"], ["软件", "軟體"], ["二维码", "QR 碼"], ["用户", "使用者"], ["当前", "目前"], ["网络", "網路"], ["激活", "啟用"], ["点击", "點選"], ["屏幕", "螢幕"], ["质量", "品質"], ["会话", "工作階段"]];
 
-function traditionalize<T>(value: T): T {
+export function traditionalize<T>(value: T): T {
   if (typeof value === "string") return [...phrases.reduce((text, [from, to]) => text.split(from).join(to), value as string)].map((character) => traditionalCharacters[character] ?? character).join("") as T;
   if (Array.isArray(value)) return value.map(traditionalize) as T;
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, traditionalize(item)])) as T;

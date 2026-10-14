@@ -5,6 +5,7 @@ import { usePageContext } from "vike-vue/usePageContext";
 import StorefrontBrand from "@/components/storefront/StorefrontBrand.vue";
 import StorefrontPreferences from "@/components/storefront/StorefrontPreferences.vue";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
+import { useLocalizedDocumentTitle } from "@/lib/seo/use-localized-title";
 
 /**
  * Frame for sign-in style pages: a dark brand panel on desktop, a quiet single column on phones.
@@ -13,6 +14,7 @@ import { useStorefrontPreferences } from "@/lib/storefront-preferences";
  */
 const pageContext = usePageContext() as ReturnType<typeof usePageContext> & { site?: { name?: string | null; subtitle?: string | null } | null };
 const { messages } = useStorefrontPreferences();
+useLocalizedDocumentTitle();
 const tagline = pageContext.site?.subtitle?.trim() || "";
 </script>
 
@@ -29,7 +31,7 @@ const tagline = pageContext.site?.subtitle?.trim() || "";
           <p class="mt-6 max-w-sm text-base leading-7 text-background/70">{{ messages.shop.heroText }}</p>
         </slot>
       </div>
-      <p class="relative text-xs text-background/50">{{ messages.shop.poweredBy }}</p>
+      <p class="relative text-xs text-background/70">{{ messages.shop.poweredBy }}</p>
     </aside>
 
     <section class="flex min-h-dvh min-w-0 flex-col">

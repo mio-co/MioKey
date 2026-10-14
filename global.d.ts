@@ -18,3 +18,10 @@ declare global {
 }
 
 export {};
+
+declare module "vue" {
+  interface ComponentCustomProperties {
+    /** Template-only page text translation (Cycle 4, lib/i18n/page-text.ts). */
+    $tr: (text: string | null | undefined, params?: Record<string, string | number>) => string;
+  }
+}

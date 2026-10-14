@@ -3,24 +3,24 @@
     <section class="mx-auto max-w-2xl px-5 pb-16 pt-8 sm:pt-12 lg:pb-20">
       <Card>
         <CardHeader>
-          <CardTitle>{{ order ? "支付结果" : "确认支付结果" }}</CardTitle>
-          <CardDescription>{{ order ? order.productName : "支付平台返回仅用于跳转；订单状态以本站查询和支付回调为准。" }}</CardDescription>
+          <CardTitle>{{ $tr(order ? "支付结果" : "确认支付结果") }}</CardTitle>
+          <CardDescription>{{ $tr(order ? order.productName : "支付平台返回仅用于跳转；订单状态以本站查询和支付回调为准。") }}</CardDescription>
         </CardHeader>
         <CardContent class="flex flex-col gap-4 text-sm">
           <Alert v-if="message" :variant="error ? 'destructive' : 'default'">
-            <AlertTitle>{{ error ? "查询失败" : "需要订单信息" }}</AlertTitle>
-            <AlertDescription>{{ message }}</AlertDescription>
+            <AlertTitle>{{ $tr(error ? "查询失败" : "需要订单信息") }}</AlertTitle>
+            <AlertDescription>{{ $tr(message) }}</AlertDescription>
           </Alert>
           <template v-if="order">
-            <div class="flex items-center justify-between gap-4 rounded-md border p-4"><span>订单状态</span><Badge :variant="statusVariant(order.status)">{{ statusLabel(order.status) }}</Badge></div>
-            <div class="grid gap-3 border-y py-4"><div class="flex justify-between gap-4"><span class="text-muted-foreground">订单号</span><span class="font-mono text-xs">{{ order.orderNo }}</span></div><div class="flex justify-between gap-4"><span class="text-muted-foreground">金额</span><span>¥{{ order.amount }}</span></div><div class="flex justify-between gap-4"><span class="text-muted-foreground">支付状态</span><span>{{ paymentStatusLabel(order.paymentStatus) }}</span></div><div class="flex justify-between gap-4"><span class="text-muted-foreground">发货状态</span><span>{{ deliveryStatusLabel(order.deliveryStatus) }}</span></div></div>
-            <div v-if="order.deliveries.length"><p class="font-medium">发货内容</p><pre class="overflow-x-auto whitespace-pre-wrap rounded-md border bg-muted/50 p-3 font-mono text-xs leading-6">{{ order.deliveries.join("\n") }}</pre></div>
-            <p v-else class="text-muted-foreground">支付通知可能仍在处理中，页面会自动查询订单状态。</p>
+            <div class="flex items-center justify-between gap-4 rounded-md border p-4"><span>{{ $tr("订单状态") }}</span><Badge :variant="statusVariant(order.status)">{{ $tr(statusLabel(order.status)) }}</Badge></div>
+            <div class="grid gap-3 border-y py-4"><div class="flex justify-between gap-4"><span class="text-muted-foreground">{{ $tr("订单号") }}</span><span class="font-mono text-xs">{{ order.orderNo }}</span></div><div class="flex justify-between gap-4"><span class="text-muted-foreground">{{ $tr("金额") }}</span><span>¥{{ order.amount }}</span></div><div class="flex justify-between gap-4"><span class="text-muted-foreground">{{ $tr("支付状态") }}</span><span>{{ $tr(paymentStatusLabel(order.paymentStatus)) }}</span></div><div class="flex justify-between gap-4"><span class="text-muted-foreground">{{ $tr("发货状态") }}</span><span>{{ $tr(deliveryStatusLabel(order.deliveryStatus)) }}</span></div></div>
+            <div v-if="order.deliveries.length"><p class="font-medium">{{ $tr("发货内容") }}</p><pre class="overflow-x-auto whitespace-pre-wrap rounded-md border bg-muted/50 p-3 font-mono text-xs leading-6">{{ order.deliveries.join("\n") }}</pre></div>
+            <p v-else class="text-muted-foreground">{{ $tr("支付通知可能仍在处理中，页面会自动查询订单状态。") }}</p>
           </template>
         </CardContent>
         <CardFooter class="flex justify-between gap-3">
-          <a :href="orderPageHref" class="text-sm font-medium hover:text-muted-foreground">打开订单查询</a>
-          <Button v-if="order?.paymentStatus === 'UNPAID'" variant="outline" size="sm" :disabled="refreshing" @click="refreshOrder">{{ refreshing ? "查询中..." : "刷新状态" }}</Button>
+          <a :href="orderPageHref" class="text-sm font-medium hover:text-muted-foreground">{{ $tr("打开订单查询") }}</a>
+          <Button v-if="order?.paymentStatus === 'UNPAID'" variant="outline" size="sm" :disabled="refreshing" @click="refreshOrder">{{ $tr(refreshing ? "查询中..." : "刷新状态") }}</Button>
         </CardFooter>
       </Card>
     </section>

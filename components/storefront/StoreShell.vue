@@ -2,10 +2,12 @@
 import StoreHeader, { type HeaderCategory, type HeaderProduct } from "@/components/storefront/StoreHeader.vue";
 import StorefrontFooter from "@/components/storefront/StorefrontFooter.vue";
 import { useStorefrontPreferences } from "@/lib/storefront-preferences";
+import { useLocalizedDocumentTitle } from "@/lib/seo/use-localized-title";
 
 /** Shared storefront frame: announcement bar + sticky header, page content, footer. */
 withDefaults(defineProps<{ products?: HeaderProduct[]; categories?: HeaderCategory[]; narrow?: boolean; tone?: "plain" | "muted"; bottomBar?: boolean }>(), { products: () => [], categories: () => [], narrow: false, tone: "plain", bottomBar: false });
 const { messages } = useStorefrontPreferences();
+useLocalizedDocumentTitle();
 </script>
 
 <template>

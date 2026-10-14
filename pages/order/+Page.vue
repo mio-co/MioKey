@@ -2,40 +2,40 @@
   <StoreShell tone="muted">
     <section class="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:pb-20">
       <div class="mb-6">
-        <h1 class="mk-h1">订单中心</h1>
-        <p class="mt-1 text-sm text-muted-foreground">未登录下单也能查：输入订单号和下单邮箱，或用邮箱验证码找回本机订单记录。</p>
+        <h1 class="mk-h1">{{ $tr("订单中心") }}</h1>
+        <p class="mt-1 text-sm text-muted-foreground">{{ $tr("未登录下单也能查：输入订单号和下单邮箱，或用邮箱验证码找回本机订单记录。") }}</p>
       </div>
 
       <div class="grid items-start gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
         <aside ref="orderSidebar" class="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle as="h2" class="text-base">按订单号查询</CardTitle>
-              <CardDescription>订单号可在下单后的页面或通知邮件中找到。</CardDescription>
+              <CardTitle as="h2" class="text-base">{{ $tr("按订单号查询") }}</CardTitle>
+              <CardDescription>{{ $tr("订单号可在下单后的页面或通知邮件中找到。") }}</CardDescription>
             </CardHeader>
             <form novalidate @submit.prevent="submitQuery">
               <CardContent>
                 <FieldGroup>
                   <VeeField v-slot="{ componentField, errors }" name="orderNo" :validate-on-input="true">
                     <Field :data-invalid="errors.length > 0">
-                      <FieldLabel for="order-number">订单号</FieldLabel>
+                      <FieldLabel for="order-number">{{ $tr("订单号") }}</FieldLabel>
                       <Input id="order-number" v-bind="componentField" autocomplete="off" placeholder="ORD..." :aria-invalid="errors.length > 0" />
                       <FieldError v-if="errors.length" :errors="errors" />
                     </Field>
                   </VeeField>
                   <VeeField v-slot="{ componentField, errors }" name="email" :validate-on-input="true">
                     <Field :data-invalid="errors.length > 0">
-                      <FieldLabel for="order-email">下单邮箱</FieldLabel>
+                      <FieldLabel for="order-email">{{ $tr("下单邮箱") }}</FieldLabel>
                       <Input id="order-email" v-bind="componentField" type="email" autocomplete="email" :aria-invalid="errors.length > 0" />
                       <FieldError v-if="errors.length" :errors="errors" />
                     </Field>
                   </VeeField>
                 </FieldGroup>
-                <Alert v-if="error" class="mt-4" variant="destructive"><AlertTitle>查询失败</AlertTitle><AlertDescription>{{ error }}</AlertDescription></Alert>
+                <Alert v-if="error" class="mt-4" variant="destructive"><AlertTitle>{{ $tr("查询失败") }}</AlertTitle><AlertDescription>{{ $tr(error) }}</AlertDescription></Alert>
               </CardContent>
               <CardFooter class="pt-5">
                 <Button type="submit" class="w-full" :disabled="querySubmitting">
-                  <SearchIcon data-icon="inline-start" />{{ querySubmitting ? "查询中..." : "查询订单" }}
+                  <SearchIcon data-icon="inline-start" />{{ $tr(querySubmitting ? "查询中..." : "查询订单") }}
                 </Button>
               </CardFooter>
             </form>
@@ -43,33 +43,33 @@
 
           <Card>
             <CardHeader>
-              <CardTitle as="h2" class="text-base">忘记订单号？用邮箱找回</CardTitle>
-              <CardDescription>我们会向下单邮箱发送验证码，验证后把该邮箱最近的订单同步到这台设备。</CardDescription>
+              <CardTitle as="h2" class="text-base">{{ $tr("忘记订单号？用邮箱找回") }}</CardTitle>
+              <CardDescription>{{ $tr("我们会向下单邮箱发送验证码，验证后把该邮箱最近的订单同步到这台设备。") }}</CardDescription>
             </CardHeader>
             <VeeForm v-slot="{ isSubmitting: recoverySubmitting }" as="form" novalidate :validation-schema="recoverySchema" @submit="submitRecovery">
               <CardContent>
                 <FieldGroup>
                   <VeeField v-slot="{ componentField, errors }" name="recoveryEmail" :validate-on-input="true">
                     <Field :data-invalid="errors.length > 0">
-                      <FieldLabel for="recovery-email">下单邮箱</FieldLabel>
+                      <FieldLabel for="recovery-email">{{ $tr("下单邮箱") }}</FieldLabel>
                       <Input id="recovery-email" v-bind="componentField" type="email" autocomplete="email" :disabled="Boolean(recoveryChallengeId)" :aria-invalid="errors.length > 0" />
                       <FieldError v-if="errors.length" :errors="errors" />
                     </Field>
                   </VeeField>
                   <VeeField v-if="recoveryChallengeId" v-slot="{ componentField, errors }" name="recoveryCode" :validate-on-input="true">
                     <Field :data-invalid="errors.length > 0">
-                      <FieldLabel for="recovery-code">6 位验证码</FieldLabel>
+                      <FieldLabel for="recovery-code">{{ $tr("6 位验证码") }}</FieldLabel>
                       <Input id="recovery-code" v-bind="componentField" inputmode="numeric" autocomplete="one-time-code" maxlength="6" :aria-invalid="errors.length > 0" />
                       <FieldError v-if="errors.length" :errors="errors" />
                     </Field>
                   </VeeField>
                 </FieldGroup>
-                <p v-if="recoveryTruncated" class="mt-4 text-xs leading-5 text-muted-foreground">仅恢复最近 50 个匿名订单；更早记录未写入本机。</p>
+                <p v-if="recoveryTruncated" class="mt-4 text-xs leading-5 text-muted-foreground">{{ $tr("仅恢复最近 50 个匿名订单；更早记录未写入本机。") }}</p>
               </CardContent>
               <CardFooter class="gap-2 pt-5">
-                <Button v-if="recoveryChallengeId" type="button" variant="outline" :disabled="recoverySubmitting" @click="resetRecovery">更换邮箱</Button>
+                <Button v-if="recoveryChallengeId" type="button" variant="outline" :disabled="recoverySubmitting" @click="resetRecovery">{{ $tr("更换邮箱") }}</Button>
                 <Button type="submit" class="flex-1" :disabled="recoverySubmitting">
-                  {{ recoverySubmitting ? "处理中..." : recoveryChallengeId ? "验证并恢复" : "发送验证码" }}
+                  {{ $tr(recoverySubmitting ? "处理中..." : recoveryChallengeId ? "验证并恢复" : "发送验证码") }}
                 </Button>
               </CardFooter>
             </VeeForm>
@@ -80,10 +80,10 @@
           <Card v-if="result" class="h-full w-full overflow-hidden">
             <CardHeader class="border-b">
               <div class="flex items-center justify-between gap-4">
-                <div class="inline-flex cursor-pointer items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" role="link" aria-label="返回匿名订单列表" tabindex="0" @click="backToGuestList" @keydown.enter="backToGuestList" @keydown.space.prevent="backToGuestList"><ArrowLeftIcon class="size-4" />返回</div>
-                <Badge :variant="statusVariant(result.status)">{{ statusLabel(result.status) }}</Badge>
+                <div class="inline-flex cursor-pointer items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground" role="link" :aria-label="$tr('返回匿名订单列表')" tabindex="0" @click="backToGuestList" @keydown.enter="backToGuestList" @keydown.space.prevent="backToGuestList"><ArrowLeftIcon class="size-4" />{{ $tr("返回") }}</div>
+                <Badge :variant="statusVariant(result.status)">{{ $tr(statusLabel(result.status)) }}</Badge>
               </div>
-              <CardDescription class="mt-3">订单详情</CardDescription>
+              <CardDescription class="mt-3">{{ $tr("订单详情") }}</CardDescription>
               <div class="flex min-w-0 items-baseline justify-between gap-4">
                 <CardTitle class="min-w-0 truncate text-xl">{{ result.productName }}</CardTitle>
                 <p class="shrink-0 break-all text-right font-mono text-xs leading-5 text-muted-foreground">{{ result.orderNo }}</p>
@@ -91,33 +91,33 @@
             </CardHeader>
             <CardContent class="flex min-h-0 flex-col gap-6 overflow-y-auto pt-6 text-sm">
               <dl class="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
-                <div><dt class="text-xs text-muted-foreground">数量</dt><dd class="mt-1 font-medium">{{ result.quantity }}</dd></div>
-                <div><dt class="text-xs text-muted-foreground">金额</dt><dd class="mt-1 font-medium">¥{{ result.amount }}</dd></div>
-                <div><dt class="text-xs text-muted-foreground">支付状态</dt><dd class="mt-1 font-medium">{{ paymentStatusLabel(result.paymentStatus) }}</dd></div>
-                <div><dt class="text-xs text-muted-foreground">发货状态</dt><dd class="mt-1 font-medium">{{ deliveryStatusLabel(result.deliveryStatus) }}</dd></div>
+                <div><dt class="text-xs text-muted-foreground">{{ $tr("数量") }}</dt><dd class="mt-1 font-medium">{{ result.quantity }}</dd></div>
+                <div><dt class="text-xs text-muted-foreground">{{ $tr("金额") }}</dt><dd class="mt-1 font-medium">¥{{ result.amount }}</dd></div>
+                <div><dt class="text-xs text-muted-foreground">{{ $tr("支付状态") }}</dt><dd class="mt-1 font-medium">{{ $tr(paymentStatusLabel(result.paymentStatus)) }}</dd></div>
+                <div><dt class="text-xs text-muted-foreground">{{ $tr("发货状态") }}</dt><dd class="mt-1 font-medium">{{ $tr(deliveryStatusLabel(result.deliveryStatus)) }}</dd></div>
               </dl>
 
 
 
               <div v-if="result.deliveries.length" class="min-w-0 border-t pt-6">
-                <p class="mb-3 font-medium">发货内容</p>
+                <p class="mb-3 font-medium">{{ $tr("发货内容") }}</p>
                 <DeliveryContents :items="result.deliveries" />
               </div>
               <Alert v-else-if="result.paymentStatus === 'PAID'">
-                <AlertTitle>等待发货</AlertTitle>
-                <AlertDescription>订单已支付，发货任务正在处理中。</AlertDescription>
+                <AlertTitle>{{ $tr("等待发货") }}</AlertTitle>
+                <AlertDescription>{{ $tr("订单已支付，发货任务正在处理中。") }}</AlertDescription>
               </Alert>
             </CardContent>
             <CardFooter v-if="result.paymentStatus === 'UNPAID'" class="justify-end border-t pt-5">
-              <Button v-if="isFaceToFacePayment" as-child><a :href="`/checkout?orderNo=${encodeURIComponent(result.orderNo)}`">前往支付</a></Button><Button v-else :disabled="resumingPayment" @click="resumePayment">{{ resumingPayment ? "正在生成支付信息..." : "继续支付" }}</Button>
+              <Button v-if="isFaceToFacePayment" as-child><a :href="`/checkout?orderNo=${encodeURIComponent(result.orderNo)}`">{{ $tr("前往支付") }}</a></Button><Button v-else :disabled="resumingPayment" @click="resumePayment">{{ $tr(resumingPayment ? "正在生成支付信息..." : "继续支付") }}</Button>
             </CardFooter>
           </Card>
 
           <Card v-else class="h-full w-full overflow-hidden lg:flex lg:min-h-0 lg:flex-col">
             <CardHeader class="border-b">
-              <CardDescription>选择或查询订单</CardDescription>
-              <CardTitle as="h2" class="text-xl">本机订单</CardTitle>
-              <p class="text-sm leading-6 text-muted-foreground">在这台设备上下过的订单会保存在这里，按下单邮箱分组；点开可查看详情或继续支付。</p>
+              <CardDescription>{{ $tr("选择或查询订单") }}</CardDescription>
+              <CardTitle as="h2" class="text-xl">{{ $tr("本机订单") }}</CardTitle>
+              <p class="text-sm leading-6 text-muted-foreground">{{ $tr("在这台设备上下过的订单会保存在这里，按下单邮箱分组；点开可查看详情或继续支付。") }}</p>
             </CardHeader>
             <CardContent v-if="guestGroups.length" class="min-h-0 overflow-hidden p-0 lg:flex-1">
               <OrderList :groups="guestGroups.map(group => ({ key: group.email, title: group.email, orders: group.orders }))" :on-select="(item, email) => openGuestOrder(email, item as LocalOrder)" :on-delete-group="requestClearGuestOrders" />
@@ -125,13 +125,13 @@
             <CardContent v-else class="grid min-h-64 place-items-center p-8 text-center lg:flex-1">
               <div class="max-w-sm">
                 <SearchIcon class="mx-auto size-8 text-muted-foreground" />
-                <h3 class="mt-4 font-medium">这台设备上还没有订单</h3>
-                <p class="mt-2 text-sm leading-6 text-muted-foreground">可以用订单号和下单邮箱查询，或用邮箱验证码找回订单记录。</p>
+                <h3 class="mt-4 font-medium">{{ $tr("这台设备上还没有订单") }}</h3>
+                <p class="mt-2 text-sm leading-6 text-muted-foreground">{{ $tr("可以用订单号和下单邮箱查询，或用邮箱验证码找回订单记录。") }}</p>
               </div>
             </CardContent>
             <CardFooter v-if="guestGroups.length" class="justify-end border-t pt-5">
               <Button type="button" variant="outline" size="sm" @click="requestClearGuestOrders()">
-                <Trash2Icon data-icon="inline-start" />删除全部匿名订单
+                <Trash2Icon data-icon="inline-start" />{{ $tr("删除全部匿名订单") }}
               </Button>
             </CardFooter>
           </Card>
@@ -142,12 +142,12 @@
     <Dialog :open="clearTarget !== undefined" @update:open="open => { if (!open) clearTarget = undefined; }">
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{{ clearTarget ? `删除 ${clearTarget} 的匿名订单？` : "删除全部匿名订单？" }}</DialogTitle>
-          <DialogDescription>{{ clearTarget ? "此操作只会删除该邮箱分组，不影响其他邮箱的本机记录。" : "此操作会永久删除当前浏览器保存的全部匿名订单记录。" }}操作无法撤销。</DialogDescription>
+          <DialogTitle>{{ clearTarget ? $tr("删除 {email} 的匿名订单？", { email: clearTarget }) : $tr("删除全部匿名订单？") }}</DialogTitle>
+          <DialogDescription>{{ $tr(clearTarget ? "此操作只会删除该邮箱分组，不影响其他邮箱的本机记录。" : "此操作会永久删除当前浏览器保存的全部匿名订单记录。") }}操作无法撤销。</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <DialogClose as-child><Button type="button" variant="outline">取消</Button></DialogClose>
-          <Button type="button" variant="destructive" @click="confirmClearGuestOrders">确认删除</Button>
+          <DialogClose as-child><Button type="button" variant="outline">{{ $tr("取消") }}</Button></DialogClose>
+          <Button type="button" variant="destructive" @click="confirmClearGuestOrders">{{ $tr("确认删除") }}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
