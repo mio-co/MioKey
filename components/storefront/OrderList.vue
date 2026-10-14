@@ -6,7 +6,7 @@
           <h2 class="truncate text-sm font-medium" :title="group.title">{{ group.title }}</h2>
           <div class="flex items-center gap-1">
             <Badge variant="outline">{{ group.orders.length }}</Badge>
-            <Button v-if="onDeleteGroup" type="button" variant="ghost" size="icon-sm" :aria-label="`删除 ${group.title} 的订单`" @click="onDeleteGroup(group.key)">
+            <Button v-if="onDeleteGroup" type="button" variant="ghost" size="icon-sm" class="size-11 sm:size-8" :aria-label="$tr('删除 {name} 的订单', { name: group.title })" @click="onDeleteGroup(group.key)">
               <Trash2Icon />
             </Button>
           </div>

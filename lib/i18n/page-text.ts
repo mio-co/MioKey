@@ -46,6 +46,8 @@ const en: Record<string, string> = {
   "这台设备上还没有订单": "No orders on this device yet",
   "可以用订单号和下单邮箱查询，或用邮箱验证码找回订单记录。": "Look up an order with its number and email, or recover your orders with an email code.",
   "删除全部匿名订单": "Delete all guest orders",
+  "删除 {name} 的订单": "Delete orders for {name}",
+  "操作无法撤销。": " This can't be undone.",
   "删除全部匿名订单？": "Delete all guest orders?",
   "删除 {email} 的匿名订单？": "Delete guest orders for {email}?",
   "取消": "Cancel",

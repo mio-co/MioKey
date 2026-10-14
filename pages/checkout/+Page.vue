@@ -3,7 +3,7 @@
     <section class="mx-auto max-w-2xl px-5 pb-16 pt-8 sm:pt-12 lg:pb-20">
       <Card>
         <CardHeader>
-          <CardTitle>{{ $tr("订单支付") }}</CardTitle>
+          <CardTitle as="h1">{{ $tr("订单支付") }}</CardTitle>
           <CardDescription class="break-all">{{ order ? `${$tr("订单号：")}${order.orderNo}` : $tr(error ? "没有找到可以继续支付的订单。" : "正在确认订单信息...") }}</CardDescription>
         </CardHeader>
         <CardContent class="flex flex-col gap-6">

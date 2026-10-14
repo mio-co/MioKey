@@ -97,11 +97,13 @@ const structuredData = computed(() => {
   const pathname = pageContext.urlPathname || "";
   const origin = siteUrl.value;
   if (!isPrivatePage.value && (pathname || "/") === "/" && origin) {
+    // Only a real (absolute http) logo; the bundled default is an inlined data: URL.
+    const orgLogo = toAbsoluteUrl(pageContext.site?.logo || pageContext.site?.logoIcon, origin);
     return JSON.stringify({
       "@context": "https://schema.org",
       "@graph": [
-        { "@type": "WebSite", name: seo.value.siteName, url: `${origin}/`, potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: `${origin}/?q={search_term_string}` }, "query-input": "required name=search_term_string" } },
-        { "@type": "Organization", name: seo.value.siteName, url: `${origin}/` },
+        { "@type": "WebSite", "@id": `${origin}/#website`, name: seo.value.siteName, url: `${origin}/`, publisher: { "@id": `${origin}/#organization` }, inLanguage: "zh-CN", potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: `${origin}/?q={search_term_string}` }, "query-input": "required name=search_term_string" } },
+        { "@type": "Organization", "@id": `${origin}/#organization`, name: seo.value.siteName, url: `${origin}/`, ...(orgLogo ? { logo: orgLogo } : {}) },
       ],
     }).replace(/</g, "\\u003c");
   }

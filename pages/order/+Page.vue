@@ -130,7 +130,7 @@
               </div>
             </CardContent>
             <CardFooter v-if="guestGroups.length" class="justify-end border-t pt-5">
-              <Button type="button" variant="outline" size="sm" @click="requestClearGuestOrders()">
+              <Button type="button" variant="outline" size="sm" class="h-11 sm:h-8" @click="requestClearGuestOrders()">
                 <Trash2Icon data-icon="inline-start" />{{ $tr("删除全部匿名订单") }}
               </Button>
             </CardFooter>
@@ -143,7 +143,7 @@
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{{ clearTarget ? $tr("删除 {email} 的匿名订单？", { email: clearTarget }) : $tr("删除全部匿名订单？") }}</DialogTitle>
-          <DialogDescription>{{ $tr(clearTarget ? "此操作只会删除该邮箱分组，不影响其他邮箱的本机记录。" : "此操作会永久删除当前浏览器保存的全部匿名订单记录。") }}操作无法撤销。</DialogDescription>
+          <DialogDescription>{{ $tr(clearTarget ? "此操作只会删除该邮箱分组，不影响其他邮箱的本机记录。" : "此操作会永久删除当前浏览器保存的全部匿名订单记录。") }}{{ $tr("操作无法撤销。") }}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose as-child><Button type="button" variant="outline">{{ $tr("取消") }}</Button></DialogClose>

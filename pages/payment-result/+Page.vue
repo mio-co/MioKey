@@ -3,7 +3,7 @@
     <section class="mx-auto max-w-2xl px-5 pb-16 pt-8 sm:pt-12 lg:pb-20">
       <Card>
         <CardHeader>
-          <CardTitle>{{ $tr(order ? "支付结果" : "确认支付结果") }}</CardTitle>
+          <CardTitle as="h1">{{ $tr(order ? "支付结果" : "确认支付结果") }}</CardTitle>
           <CardDescription>{{ $tr(order ? order.productName : "支付平台返回仅用于跳转；订单状态以本站查询和支付回调为准。") }}</CardDescription>
         </CardHeader>
         <CardContent class="flex flex-col gap-4 text-sm">
@@ -19,7 +19,7 @@
           </template>
         </CardContent>
         <CardFooter class="flex justify-between gap-3">
-          <a :href="orderPageHref" class="text-sm font-medium hover:text-muted-foreground">{{ $tr("打开订单查询") }}</a>
+          <a :href="orderPageHref" class="inline-flex min-h-11 items-center text-sm font-medium hover:text-muted-foreground sm:min-h-0">{{ $tr("打开订单查询") }}</a>
           <Button v-if="order?.paymentStatus === 'UNPAID'" variant="outline" size="sm" :disabled="refreshing" @click="refreshOrder">{{ $tr(refreshing ? "查询中..." : "刷新状态") }}</Button>
         </CardFooter>
       </Card>
