@@ -31,10 +31,31 @@ export function buildSitemapXml(origin: string, catalog: { categories: { id: num
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${entries.join("\n")}\n</urlset>\n`;
 }
 
+/**
+ * Read-only /robots.txt (Cycle 4, replaces the static public/robots.txt). Same rules as before plus an
+ * absolute Sitemap line built from the configured siteUrl (falls back to the request origin).
+ */
+export function buildRobotsTxt(origin: string) {
+  return [
+    "# MioKey storefront. Private pages also send <meta name=\"robots\" content=\"noindex\">.",
+    "# The admin path is configurable (ADMIN_PATH), so it is not listed here; admin pages are noindex.",
+    "User-agent: *",
+    ...["/api/", "/_telefunc", "/account", "/checkout", "/order", "/payment-result", "/setup", "/auth/"].map((path) => `Disallow: ${path}`),
+    "Allow: /",
+    "",
+    `Sitemap: ${origin}/sitemap.xml`,
+    "",
+  ].join("\n");
+}
+
 export function registerSeoRoutes(app: Hono<{ Bindings: Record<string, unknown> & { DB: D1Database } }>) {
   app.get("/sitemap.xml", async (context) => {
     const [settings, catalog] = await Promise.all([getSiteSettings(context.env.DB), getPublicCatalog(context.env.DB)]);
     const xml = buildSitemapXml(siteOrigin(settings.siteUrl, context.req.url), catalog);
     return context.body(xml, 200, { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" });
+  });
+  app.get("/robots.txt", async (context) => {
+    const settings = await getSiteSettings(context.env.DB);
+    return context.body(buildRobotsTxt(siteOrigin(settings.siteUrl, context.req.url)), 200, { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" });
   });
 }

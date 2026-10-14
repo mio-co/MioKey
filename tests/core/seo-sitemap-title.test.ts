@@ -1,6 +1,6 @@
 // @ts-expect-error Tests run with Bun, while this project intentionally omits Bun's global type package.
 import { describe, expect, test } from "bun:test";
-import { buildSitemapXml } from "../../server/seo/sitemap";
+import { buildRobotsTxt, buildSitemapXml } from "../../server/seo/sitemap";
 import { storefrontPageTitle } from "../../lib/seo/page-title";
 
 describe("sitemap.xml", () => {
@@ -26,5 +26,14 @@ describe("storefront page titles", () => {
     expect(storefrontPageTitle("/login", { name: "店" })).toBe("登录 · 店");
     expect(storefrontPageTitle("/account/order/", { name: "店" })).toBe("我的订单 · 店");
     expect(storefrontPageTitle("/whatever", null)).toBe("MioKey");
+  });
+});
+
+describe("buildRobotsTxt", () => {
+  test("keeps the private-path rules and points at the absolute sitemap", () => {
+    const txt = buildRobotsTxt("https://shop.example.com");
+    expect(txt).toContain("Disallow: /checkout");
+    expect(txt).toContain("Disallow: /api/");
+    expect(txt.trim().endsWith("Sitemap: https://shop.example.com/sitemap.xml")).toBe(true);
   });
 });
