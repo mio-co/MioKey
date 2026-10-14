@@ -28,38 +28,36 @@ export async function allocateCardsForPaidOrder(database: D1Database, orderId: n
     .from(card)
     .where(and(eq(card.orderId, orderId), eq(card.status, "RESERVED")))
     .orderBy(asc(card.id));
-  const sellReserved = reserved.slice(0, count - existing.length);
-  const surplus = reserved.slice(sellReserved.length);
-  const missingCount = count - existing.length - sellReserved.length;
+  const sellCount = Math.min(reserved.length, count - existing.length);
+  const missingCount = count - existing.length - sellCount;
 
-  const candidates = missingCount > 0
-    ? await db
-      .select({ id: card.id })
+  if (missingCount > 0) {
+    const [available] = await db
+      .select({ n: sql<number>`count(*)` })
       .from(card)
-      .where(and(eq(card.productSkuId, productSkuId), eq(card.status, "UNUSED")))
-      .orderBy(asc(card.id))
-      .limit(missingCount)
-    : [];
-  if (candidates.length < missingCount) appError("CARD_INVENTORY_SHORTAGE");
+      .where(and(eq(card.productSkuId, productSkuId), eq(card.status, "UNUSED")));
+    if (Number(available?.n ?? 0) < missingCount) appError("CARD_INVENTORY_SHORTAGE");
+  }
 
+  // Every statement binds a constant number of parameters (D1 caps a
+  // statement at 100), whatever the order quantity.
   const now = Date.now();
+  const guard = (expected: number) => database.prepare("INSERT INTO transactionGuard (id, value) VALUES (1, CASE WHEN changes() = ? THEN 1 ELSE 0 END) ON CONFLICT(id) DO UPDATE SET value = excluded.value").bind(expected);
   const statements: D1PreparedStatement[] = [];
-  if (sellReserved.length) {
-    const sellIds = sellReserved.map((item) => item.id);
+  if (sellCount > 0) {
     statements.push(
-      database.prepare(`UPDATE card SET status = 'SOLD', soldAt = ?, updatedAt = ? WHERE id IN (${sellIds.map(() => "?").join(",")}) AND orderId = ? AND status = 'RESERVED'`).bind(now, now, ...sellIds, orderId),
-      database.prepare("INSERT INTO transactionGuard (id, value) VALUES (1, CASE WHEN changes() = ? THEN 1 ELSE 0 END) ON CONFLICT(id) DO UPDATE SET value = excluded.value").bind(sellIds.length),
+      database.prepare("UPDATE card SET status = 'SOLD', soldAt = ?, updatedAt = ? WHERE id IN (SELECT id FROM card WHERE orderId = ? AND status = 'RESERVED' ORDER BY id LIMIT ?)").bind(now, now, orderId, sellCount),
+      guard(sellCount),
     );
   }
-  if (surplus.length) {
-    const surplusIds = surplus.map((item) => item.id);
-    statements.push(database.prepare(`UPDATE card SET status = 'UNUSED', orderId = NULL, updatedAt = ? WHERE id IN (${surplusIds.map(() => "?").join(",")}) AND orderId = ? AND status = 'RESERVED'`).bind(now, ...surplusIds, orderId));
+  if (reserved.length > sellCount) {
+    // Release any reservation beyond the quantity, after the sell above.
+    statements.push(database.prepare("UPDATE card SET status = 'UNUSED', orderId = NULL, updatedAt = ? WHERE orderId = ? AND status = 'RESERVED'").bind(now, orderId));
   }
-  if (candidates.length) {
-    const candidateIds = candidates.map((item) => item.id);
+  if (missingCount > 0) {
     statements.push(
-      database.prepare(`UPDATE card SET status = 'SOLD', orderId = ?, soldAt = ?, updatedAt = ? WHERE id IN (${candidateIds.map(() => "?").join(",")}) AND status = 'UNUSED'`).bind(orderId, now, now, ...candidateIds),
-      database.prepare("INSERT INTO transactionGuard (id, value) VALUES (1, CASE WHEN changes() = ? THEN 1 ELSE 0 END) ON CONFLICT(id) DO UPDATE SET value = excluded.value").bind(missingCount),
+      database.prepare("UPDATE card SET status = 'SOLD', orderId = ?, soldAt = ?, updatedAt = ? WHERE id IN (SELECT id FROM card WHERE productSkuId = ? AND status = 'UNUSED' ORDER BY id LIMIT ?)").bind(orderId, now, now, productSkuId, missingCount),
+      guard(missingCount),
     );
   }
   try {

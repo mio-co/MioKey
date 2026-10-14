@@ -214,4 +214,36 @@ describe("CARD_AUTO reservation", () => {
       { content: "CARD-3", status: "UNUSED", orderId: null },
     ]);
   });
+  test("large-quantity allocation binds at most 100 parameters per statement (D1 limit)", async () => {
+    const context = setup(260);
+    const created = await buy(context, "a@example.com");
+    context.sqlite.query("UPDATE card SET status = 'RESERVED', orderId = ? WHERE id IN (SELECT id FROM card WHERE status = 'UNUSED' ORDER BY id LIMIT 150)").run(created.id);
+    const bindCounts: number[] = [];
+    const prepare = context.database.prepare.bind(context.database);
+    const database = new Proxy(context.database, {
+      get(target, key) {
+        if (key !== "prepare") return Reflect.get(target, key);
+        return (sql: string) => {
+          const statement = prepare(sql);
+          const bind = statement.bind.bind(statement);
+          statement.bind = (...values: unknown[]) => {
+            bindCounts.push(values.length);
+            return bind(...values);
+          };
+          return statement;
+        };
+      },
+    });
+    // 120 of the 150 reserved cards are sold and 30 released.
+    const allocated = await allocateCardsForPaidOrder(database, created.id, 120, context.productSkuId);
+    expect(allocated).toHaveLength(120);
+    expect(context.sqlite.query("SELECT count(*) AS n FROM card WHERE status = 'RESERVED'").get()).toEqual({ n: 0 });
+    // A legacy order with no reservation takes 110 unreserved cards.
+    const legacy = await buy(context, "b@example.com");
+    context.sqlite.query("UPDATE card SET status = 'UNUSED', orderId = NULL WHERE status = 'RESERVED'").run();
+    const legacyAllocated = await allocateCardsForPaidOrder(database, legacy.id, 110, context.productSkuId);
+    expect(legacyAllocated).toHaveLength(110);
+    expect(bindCounts.length).toBeGreaterThan(0);
+    expect(Math.max(...bindCounts)).toBeLessThanOrEqual(100);
+  });
 });
