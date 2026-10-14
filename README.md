@@ -23,13 +23,23 @@ MioKey 在 [34892002/cffk](https://github.com/34892002/cffk) 的基础上重做�
 
 ## 页面展示
 
-> 前台商城
+> 截图来自本地演示数据（MioKey Demo），桌面 1440px / 手机 iPhone 12。
 
-<img src="./docs/imgs/miokey-home.png" alt="商城首页" width="100%">
+### 前台商城
 
-> 后台管理
+| 桌面 | 手机 |
+| --- | --- |
+| <img src="./docs/imgs/miokey-home-desktop.jpg" alt="商城首页（桌面）" width="100%"> | <img src="./docs/imgs/miokey-home-mobile.jpg" alt="商城首页（手机）" width="260"> |
+| <img src="./docs/imgs/miokey-product-desktop.jpg" alt="商品详情（桌面）" width="100%"> | <img src="./docs/imgs/miokey-product-mobile.jpg" alt="商品详情（手机）" width="260"> |
+| <img src="./docs/imgs/miokey-checkout-desktop.jpg" alt="订单支付（桌面）" width="100%"> | <img src="./docs/imgs/miokey-checkout-mobile.jpg" alt="订单支付（手机）" width="260"> |
 
-<img src="./docs/imgs/miokey-admin.png" alt="管理后台" width="100%">
+### 管理后台
+
+| 桌面 | 手机 |
+| --- | --- |
+| <img src="./docs/imgs/miokey-admin-dashboard-desktop.jpg" alt="后台仪表盘（桌面）" width="100%"> | <img src="./docs/imgs/miokey-admin-dashboard-mobile.jpg" alt="后台仪表盘（手机）" width="260"> |
+| <img src="./docs/imgs/miokey-admin-table-desktop.jpg" alt="订单管理表格（桌面）" width="100%"> | <img src="./docs/imgs/miokey-admin-table-mobile.jpg" alt="订单管理表格（手机卡片视图）" width="260"> |
+| | <img src="./docs/imgs/miokey-admin-mobile-sidebar-open.jpg" alt="后台侧栏（手机展开）" width="260"> |
 
 ## 🎉 核心特性
 

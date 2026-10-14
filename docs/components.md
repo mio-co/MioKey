@@ -2,7 +2,7 @@
 
 业务页面优先复用 `components/ui`、`components/admin` 和本页已有组件。基础 UI 组件由 shadcn-vue 风格封装提供；业务页面不得直接用原生 `input`、`select`、`textarea`、`button` 绕开统一样式。
 
-组件只负责展示与交互，不负责领域鉴权或直接发起业务 Telefunc。页面负责数据、请求与状态，服务端入口负责 `guest` / `user` / `root` 权限判断。完整权限与错误脱敏规则见 [框架设计规划.md](./框架设计规划.md)。
+组件只负责展示与交互，不负责领域鉴权或直接发起业务 Telefunc。页面负责数据、请求与状态，服务端入口负责 `guest` / `user` / `root` 权限判断。完整权限与错误脱敏规则见 [框架设计规划.md](../feat/框架设计规划.md)。
 
 ## 后台组件
 
