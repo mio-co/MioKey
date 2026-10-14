@@ -66,7 +66,7 @@ const locales: { key: StorefrontLocale; label: string }[] = [
 
 <template>
   <div class="mk-store contents">
-    <div v-if="notice" class="relative z-[51] overflow-hidden bg-foreground text-background">
+    <aside v-if="notice" class="relative z-[51] overflow-hidden bg-foreground text-background" :aria-label="messages.nav.announcement">
       <div class="mk-page flex h-10 items-center justify-center text-[13px] leading-5">
         <div v-if="notice.length > 38" class="w-full overflow-hidden" :aria-label="notice">
           <div class="mk-marquee" style="--mk-marquee-dur: 26s" aria-hidden="true">
@@ -75,7 +75,7 @@ const locales: { key: StorefrontLocale; label: string }[] = [
         </div>
         <p v-else class="truncate">{{ notice }}</p>
       </div>
-    </div>
+    </aside>
 
     <header
       class="sticky top-0 z-50 border-b border-transparent bg-background/90 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-500 ease-out-expo supports-[backdrop-filter]:bg-background/75"

@@ -3,7 +3,7 @@ import zhCN from "@/lib/i18n/zh-CN";
 export default {
   ...zhCN,
   languageName: "English",
-  nav: { main: "Main navigation", myOrders: "My orders", orderLookup: "Order lookup", signIn: "Sign in", accountMenu: "{name}'s account menu", account: "Account", accountSettings: "Account settings", signingOut: "Signing out...", signOut: "Sign out", signOutFailed: "Could not sign out. Please try again.", signedOut: "Signed out." },
+  nav: { main: "Main navigation", utility: "Language, theme and account", announcement: "Store announcement", myOrders: "My orders", orderLookup: "Order lookup", signIn: "Sign in", accountMenu: "{name}'s account menu", account: "Account", accountSettings: "Account settings", signingOut: "Signing out...", signOut: "Sign out", signOutFailed: "Could not sign out. Please try again.", signedOut: "Signed out." },
   shop: {
     home: "Home", allProducts: "All products", search: "Search", searchTitle: "Search products", searchPlaceholder: "Product name or keyword", searchSubmit: "Search", searchHint: "Press Enter to see all results", searchResults: "Results", searchEmpty: "No matching products. Try another keyword.", popular: "Popular categories", featured: "Featured", viewAll: "View all", menu: "Menu", openMenu: "Open menu", closeMenu: "Close menu", close: "Close", clearSearch: "Clear search", prev: "Previous", next: "Next",
     heroEyebrow: "Instant delivery", heroTitle: "Digital goods,\ndelivered in seconds.", heroText: "Hand-picked digital goods, delivered automatically after payment. Look up any order with its number and email.", heroCta: "Shop now", heroSecondary: "Track an order",

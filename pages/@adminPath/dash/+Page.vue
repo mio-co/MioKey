@@ -6,7 +6,7 @@
       <Card v-for="metric in metrics" :key="metric.label" class="gap-0">
         <CardHeader class="pb-0">
           <CardDescription>{{ metric.label }}</CardDescription>
-          <CardTitle class="mk-display pt-1 text-[28px] leading-none tabular-nums">{{ metric.value }}</CardTitle>
+          <CardTitle as="p" class="mk-display pt-1 text-[28px] leading-none tabular-nums">{{ metric.value }}</CardTitle>
         </CardHeader>
         <CardFooter class="pt-1.5 text-sm text-muted-foreground">{{ metric.description }}</CardFooter>
       </Card>

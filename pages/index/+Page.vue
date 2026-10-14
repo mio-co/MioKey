@@ -60,7 +60,7 @@
             type="button"
             role="tab"
             :aria-selected="selectedCategory === item.id"
-            class="h-10 shrink-0 rounded-full border px-5 text-sm font-medium transition-colors duration-300 hover:border-foreground aria-selected:border-foreground aria-selected:bg-foreground aria-selected:text-background"
+            class="h-11 shrink-0 rounded-full md:h-10 border px-5 text-sm font-medium transition-colors duration-300 hover:border-foreground aria-selected:border-foreground aria-selected:bg-foreground aria-selected:text-background"
             @click="selectCategory(item.id)"
           >
             {{ item.name }}<span class="ml-1.5 text-xs opacity-60 tabular-nums">{{ item.count }}</span>

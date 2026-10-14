@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TRow extends Record<string, unknown>">
-import { computed, useSlots } from "vue"
+import { computed, getCurrentInstance, onMounted, ref, useSlots, watch } from "vue"
 import { useMediaQuery } from "@vueuse/core"
 import { InboxIcon } from "@lucide/vue"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -37,7 +37,15 @@ const props = withDefaults(defineProps<{
 const slots = useSlots()
 const isPhone = useMediaQuery("(max-width: 767.98px)", { ssrWidth: 1024 })
 const columnCount = computed(() => props.columns.length + (props.showActions ? 1 : 0))
-const showSkeleton = computed(() => props.loading && !props.rows.length)
+// The server renders before the page's first fetch starts, so a table that is fed by `loading`
+// shows skeleton rows (not the empty state) until that first load settles. Avoids an
+// empty → skeleton → rows jump (mobile CLS ~0.2 in Cycle 2).
+const vnodeProps = getCurrentInstance()?.vnode.props ?? {}
+const tracksLoading = "loading" in vnodeProps
+const firstLoadDone = ref(!tracksLoading)
+watch(() => props.loading, (now, before) => { if (before && !now) firstLoadDone.value = true })
+onMounted(() => { window.setTimeout(() => { if (!props.loading) firstLoadDone.value = true }, 1500) })
+const showSkeleton = computed(() => !props.rows.length && (props.loading || !firstLoadDone.value))
 const menuEnabled = computed(() => props.rowMenu && props.showActions && Boolean(slots.actions) && !isPhone.value)
 
 function keyFor(row: TRow) {

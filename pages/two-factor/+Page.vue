@@ -37,6 +37,7 @@
 <script setup lang="ts">
 import { toTypedSchema } from "@vee-validate/zod";
 import { Field as VeeField, useForm } from "vee-validate";
+import { focusFirstInvalid } from "@/lib/ui/focus-invalid";
 import { navigate } from "vike/client/router";
 import { toast } from "vue-sonner";
 import { z } from "zod";
@@ -75,5 +76,5 @@ const verify = handleSubmit(async ({ code }) => {
   } catch {
     toast.error(messages.value.auth.twoFactor.failed);
   }
-});
+}, () => { void focusFirstInvalid(); });
 </script>

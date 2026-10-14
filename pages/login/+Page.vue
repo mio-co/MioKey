@@ -37,6 +37,7 @@
 <script lang="ts" setup>
 import { toTypedSchema } from "@vee-validate/zod";
 import { Field as VeeField, useForm } from "vee-validate";
+import { focusFirstInvalid } from "@/lib/ui/focus-invalid";
 import { navigate } from "vike/client/router";
 import { usePageContext } from "vike-vue/usePageContext";
 import { computed, nextTick, onMounted, ref } from "vue";
@@ -116,7 +117,7 @@ const submit = handleSubmit(async (input) => {
     resetTurnstile();
     formError.value = messages.value.auth.login.requestFailed;
   }
-});
+}, () => { void focusFirstInvalid(); });
 
 onMounted(() => { void loadTurnstile().catch(() => { formError.value = messages.value.auth.login.captchaLoadFailed; }); });
 </script>

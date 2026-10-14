@@ -374,6 +374,8 @@
   .mk-table-stack .mk-table-frame tbody .mk-empty-row { padding: 0; }
   .mk-table-stack .mk-table-frame tbody .mk-empty-row [data-slot="table-cell"] { justify-content: center; border: 0; }
   .mk-table-stack .mk-table-frame tbody .mk-skeleton-row [data-slot="table-cell"] > [data-slot="skeleton"] { width: 45% !important; }
+  /* Cycle 2: stacked skeleton cards are tall; two are enough and keep the jump to real rows small (CLS). */
+  .mk-table-stack .mk-table-frame tbody .mk-skeleton-row:nth-child(n+3) { display: none; }
   .mk-table-toolbar > * { flex-wrap: wrap; }
   .mk-table-toolbar [data-slot="input"] { width: 100%; flex: 1 1 100%; }
   .mk-table-pagination { overflow-x: auto; }
@@ -392,6 +394,10 @@
 @media (pointer: coarse) {
   :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="switch"], [data-slot="checkbox"], [data-slot="radio-group-item"]) { position: relative; }
   :is(.mk-admin-main, body:has(.mk-admin) [data-slot="dialog-content"]) :is([data-slot="switch"], [data-slot="checkbox"], [data-slot="radio-group-item"])::after { content: ""; position: absolute; inset: -12px; }
+  /* Cycle 2: admin tabs and pagination were 29–32px tall on phones. */
+  .mk-admin-main [data-slot="tabs-list"] { height: auto; }
+  .mk-admin-main [data-slot="tabs-trigger"] { min-height: 2.5rem; }
+  .mk-admin-main .mk-touch-44 { width: 2.75rem; height: 2.75rem; }
 }
 
 /* Cycle 1: skip link (keyboard users jump past header/sidebar), admin card headers with a divider. */

@@ -45,10 +45,10 @@ function setPageSize(value: unknown) {
       </label>
       <span class="text-sm font-medium">第 {{ currentPage }} / {{ totalPages }} 页</span>
       <div class="flex items-center gap-2">
-        <Button variant="outline" size="icon-sm" :disabled="currentPage <= 1" aria-label="首页" @click="setPage(1)"><ChevronsLeftIcon /></Button>
-        <Button variant="outline" size="icon-sm" :disabled="currentPage <= 1" aria-label="上一页" @click="setPage(currentPage - 1)"><ChevronLeftIcon /></Button>
-        <Button variant="outline" size="icon-sm" :disabled="currentPage >= totalPages" aria-label="下一页" @click="setPage(currentPage + 1)"><ChevronRightIcon /></Button>
-        <Button variant="outline" size="icon-sm" :disabled="currentPage >= totalPages" aria-label="末页" @click="setPage(totalPages)"><ChevronsRightIcon /></Button>
+        <Button variant="outline" size="icon-sm" class="mk-touch-44" :disabled="currentPage <= 1" aria-label="首页" @click="setPage(1)"><ChevronsLeftIcon /></Button>
+        <Button variant="outline" size="icon-sm" class="mk-touch-44" :disabled="currentPage <= 1" aria-label="上一页" @click="setPage(currentPage - 1)"><ChevronLeftIcon /></Button>
+        <Button variant="outline" size="icon-sm" class="mk-touch-44" :disabled="currentPage >= totalPages" aria-label="下一页" @click="setPage(currentPage + 1)"><ChevronRightIcon /></Button>
+        <Button variant="outline" size="icon-sm" class="mk-touch-44" :disabled="currentPage >= totalPages" aria-label="末页" @click="setPage(totalPages)"><ChevronsRightIcon /></Button>
       </div>
     </div>
   </div>

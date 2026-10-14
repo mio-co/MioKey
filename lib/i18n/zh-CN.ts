@@ -2,6 +2,8 @@ export default {
   languageName: "简体中文",
   nav: {
     main: "主导航",
+    utility: "语言、主题与账户",
+    announcement: "店铺公告",
     myOrders: "我的订单",
     orderLookup: "订单查询",
     signIn: "登录",

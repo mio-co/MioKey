@@ -61,6 +61,7 @@
 <script lang="ts" setup>
 import { toTypedSchema } from "@vee-validate/zod";
 import { Field as VeeField, useForm } from "vee-validate";
+import { focusFirstInvalid } from "@/lib/ui/focus-invalid";
 
 import { usePageContext } from "vike-vue/usePageContext";
 import { toast } from "vue-sonner";
@@ -106,5 +107,5 @@ const submit = handleSubmit(async ({ confirmPassword: _confirmPassword, ...input
   } catch {
     toast.error(messages.value.auth.signup.requestFailed);
   }
-});
+}, () => { void focusFirstInvalid(); });
 </script>

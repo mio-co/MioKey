@@ -37,66 +37,68 @@
     </SidebarHeader>
 
     <SidebarContent class="mk-no-scrollbar">
-      <SidebarGroup v-for="section in sections" :key="section.label">
-        <SidebarGroupLabel>{{ section.label }}</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <template v-for="entry in section.entries" :key="entry.key">
-              <!-- Single page link -->
-              <SidebarMenuItem v-if="entry.kind === 'link'" :data-testid="`nav-${entry.key}`">
-                <SidebarMenuButton as-child :is-active="isActive(entry.path)" :tooltip="entry.title">
-                  <a :href="basePath + entry.path" :aria-current="isActive(entry.path) ? 'page' : undefined" @click="onNavClick(basePath + entry.path, $event)">
-                    <component :is="entry.icon" />
-                    <span>{{ entry.title }}</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <!-- Group, icon-collapsed desktop rail: flyout menu so the group still works without expanding the rail -->
-              <SidebarMenuItem v-else-if="railCollapsed" :data-testid="`nav-${entry.key}`">
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <SidebarMenuButton :is-active="isGroupActive(entry)" :tooltip="entry.title">
+      <nav aria-label="后台导航" class="contents">
+        <SidebarGroup v-for="section in sections" :key="section.label">
+          <SidebarGroupLabel>{{ section.label }}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <template v-for="entry in section.entries" :key="entry.key">
+                <!-- Single page link -->
+                <SidebarMenuItem v-if="entry.kind === 'link'" :data-testid="`nav-${entry.key}`">
+                  <SidebarMenuButton as-child :is-active="isActive(entry.path)" :tooltip="entry.title">
+                    <a :href="basePath + entry.path" :aria-current="isActive(entry.path) ? 'page' : undefined" @click="onNavClick(basePath + entry.path, $event)">
                       <component :is="entry.icon" />
                       <span>{{ entry.title }}</span>
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start" :side-offset="10" class="min-w-48">
-                    <DropdownMenuLabel>{{ entry.title }}</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem v-for="item in entry.items" :key="item.path" as-child>
-                      <a :href="basePath + item.path" :aria-current="isActive(item.path) ? 'page' : undefined" :class="isActive(item.path) ? 'font-semibold' : ''">{{ item.title }}</a>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-
-              <!-- Group, expanded: collapsible with remembered open state -->
-              <Collapsible v-else as-child :open="isGroupOpen(entry)" class="group/collapsible" @update:open="setGroupOpen(entry, $event)">
-                <SidebarMenuItem :data-testid="`nav-${entry.key}`">
-                  <CollapsibleTrigger as-child>
-                    <SidebarMenuButton :tooltip="entry.title" :data-group-active="isGroupActive(entry) || undefined" class="data-[group-active]:font-medium">
-                      <component :is="entry.icon" />
-                      <span>{{ entry.title }}</span>
-                      <span v-if="!isGroupOpen(entry) && isGroupActive(entry)" class="ml-auto size-1.5 shrink-0 rounded-full bg-foreground" aria-hidden="true" />
-                      <ChevronRightIcon :class="['shrink-0 opacity-60 transition-transform duration-300 ease-(--ease-out-expo) group-data-[state=open]/collapsible:rotate-90', !isGroupOpen(entry) && isGroupActive(entry) ? 'ml-1' : 'ml-auto']" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent class="mk-collapsible">
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem v-for="item in entry.items" :key="item.path">
-                        <SidebarMenuSubButton as-child :is-active="isActive(item.path)">
-                          <a :href="basePath + item.path" :aria-current="isActive(item.path) ? 'page' : undefined" @click="onNavClick(basePath + item.path, $event)"><span>{{ item.title }}</span></a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
+                    </a>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
-              </Collapsible>
-            </template>
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+
+                <!-- Group, icon-collapsed desktop rail: flyout menu so the group still works without expanding the rail -->
+                <SidebarMenuItem v-else-if="railCollapsed" :data-testid="`nav-${entry.key}`">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <SidebarMenuButton :is-active="isGroupActive(entry)" :tooltip="entry.title">
+                        <component :is="entry.icon" />
+                        <span>{{ entry.title }}</span>
+                      </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start" :side-offset="10" class="min-w-48">
+                      <DropdownMenuLabel>{{ entry.title }}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem v-for="item in entry.items" :key="item.path" as-child>
+                        <a :href="basePath + item.path" :aria-current="isActive(item.path) ? 'page' : undefined" :class="isActive(item.path) ? 'font-semibold' : ''">{{ item.title }}</a>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
+
+                <!-- Group, expanded: collapsible with remembered open state -->
+                <Collapsible v-else as-child :open="isGroupOpen(entry)" class="group/collapsible" @update:open="setGroupOpen(entry, $event)">
+                  <SidebarMenuItem :data-testid="`nav-${entry.key}`">
+                    <CollapsibleTrigger as-child>
+                      <SidebarMenuButton :tooltip="entry.title" :data-group-active="isGroupActive(entry) || undefined" class="data-[group-active]:font-medium">
+                        <component :is="entry.icon" />
+                        <span>{{ entry.title }}</span>
+                        <span v-if="!isGroupOpen(entry) && isGroupActive(entry)" class="ml-auto size-1.5 shrink-0 rounded-full bg-foreground" aria-hidden="true" />
+                        <ChevronRightIcon :class="['shrink-0 opacity-60 transition-transform duration-300 ease-(--ease-out-expo) group-data-[state=open]/collapsible:rotate-90', !isGroupOpen(entry) && isGroupActive(entry) ? 'ml-1' : 'ml-auto']" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent class="mk-collapsible">
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem v-for="item in entry.items" :key="item.path">
+                          <SidebarMenuSubButton as-child :is-active="isActive(item.path)">
+                            <a :href="basePath + item.path" :aria-current="isActive(item.path) ? 'page' : undefined" @click="onNavClick(basePath + item.path, $event)"><span>{{ item.title }}</span></a>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              </template>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </nav>
     </SidebarContent>
 
     <SidebarFooter>

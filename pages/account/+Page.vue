@@ -12,7 +12,7 @@
             <CardTitle>{{ messages.account.profile.title }}</CardTitle>
             <CardDescription>{{ messages.account.profile.description }}</CardDescription>
           </CardHeader>
-          <VeeForm class="flex flex-col gap-4" :validation-schema="toTypedSchema(profileSchema)" :initial-values="profileInitialValues" novalidate @submit="submitProfile">
+          <VeeForm class="flex flex-col gap-4" :validation-schema="toTypedSchema(profileSchema)" :initial-values="profileInitialValues" novalidate @submit="submitProfile" @invalid-submit="focusFirstInvalid()">
             <CardContent class="grid gap-5">
               <div class="flex items-center gap-3">
                 <Avatar class="size-11">
@@ -40,7 +40,7 @@
             <CardTitle>{{ messages.account.email.title }}</CardTitle>
             <CardDescription>{{ messages.account.email.description }}</CardDescription>
           </CardHeader>
-          <VeeForm class="flex flex-col gap-4" :validation-schema="toTypedSchema(emailSchema)" :initial-values="emailInitialValues" novalidate @submit="submitEmailChange">
+          <VeeForm class="flex flex-col gap-4" :validation-schema="toTypedSchema(emailSchema)" :initial-values="emailInitialValues" novalidate @submit="submitEmailChange" @invalid-submit="focusFirstInvalid()">
             <CardContent class="grid gap-4">
               <div class="rounded-lg border px-4 py-3">
                 <div class="flex flex-wrap items-center gap-2">
@@ -67,7 +67,7 @@
             <CardTitle>{{ messages.account.password.title }}</CardTitle>
             <CardDescription>{{ messages.account.password.description }}</CardDescription>
           </CardHeader>
-          <VeeForm class="flex flex-col gap-4" :validation-schema="toTypedSchema(passwordSchema)" novalidate @submit="submitPassword">
+          <VeeForm class="flex flex-col gap-4" :validation-schema="toTypedSchema(passwordSchema)" novalidate @submit="submitPassword" @invalid-submit="focusFirstInvalid()">
             <CardContent class="grid gap-4 md:grid-cols-3">
               <VeeField v-slot="{ componentField, errors }" name="currentPassword"><Field :data-invalid="errors.length > 0"><FieldLabel for="current-password"><span class="text-destructive">*</span> {{ messages.account.password.current }}</FieldLabel><Input id="current-password" v-bind="componentField" type="password" autocomplete="current-password" :aria-invalid="errors.length > 0" /><FieldError v-if="errors.length" :errors="errors" /></Field></VeeField>
               <VeeField v-slot="{ componentField, errors }" name="newPassword"><Field :data-invalid="errors.length > 0"><FieldLabel for="new-password"><span class="text-destructive">*</span> {{ messages.account.password.new }}</FieldLabel><Input id="new-password" v-bind="componentField" type="password" autocomplete="new-password" :aria-invalid="errors.length > 0" /><FieldError v-if="errors.length" :errors="errors" /></Field></VeeField>
@@ -176,6 +176,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { MapPinIcon, PencilIcon, PlusIcon } from "@lucide/vue";
 import { toTypedSchema } from "@vee-validate/zod";
 import { Field as VeeField, Form as VeeForm, useForm } from "vee-validate";
+import { focusFirstInvalid } from "@/lib/ui/focus-invalid";
 import { usePageContext } from "vike-vue/usePageContext";
 import { toast } from "vue-sonner";
 import { z } from "zod";
@@ -375,7 +376,7 @@ const submitAddress = handleSubmit(async (form) => {
   } finally {
     saving.value = false;
   }
-}, () => toast.error(messages.value.account.addresses.invalidForm));
+}, () => { toast.error(messages.value.account.addresses.invalidForm); void focusFirstInvalid(document.querySelector("[role=dialog]")); });
 
 async function setDefault(address: Address) {
   busyId.value = address.id;

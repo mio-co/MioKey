@@ -28,11 +28,11 @@
       <div v-if="status" class="min-w-0">
         <section v-if="activeSection === 'two-factor'" aria-labelledby="two-factor-title" class="grid gap-6">
           <div><h2 id="two-factor-title" class="text-xl font-semibold tracking-normal">双重认证</h2><p class="mt-1 text-sm text-muted-foreground">启用后，管理员使用邮箱和密码登录时还必须提供验证器 App 的验证码。</p></div>
-          <Alert :class="status.twoFactorEnabled ? undefined : 'border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400'">
+          <Alert :class="status.twoFactorEnabled ? undefined : 'border-orange-500/30 bg-orange-500/10 text-orange-800 dark:text-orange-300'">
             <ShieldCheckIcon v-if="status.twoFactorEnabled" class="size-4" />
             <ShieldAlertIcon v-else class="size-4" />
             <AlertTitle>{{ status.twoFactorEnabled ? "双重认证已启用" : "双重认证未启用" }}</AlertTitle>
-            <AlertDescription :class="status.twoFactorEnabled ? undefined : 'text-orange-600 dark:text-orange-400'">{{ status.twoFactorEnabled ? `账号 ${status.email} 受验证器 App 保护。` : "建议在生产环境中启用，并妥善保存恢复代码。" }}</AlertDescription>
+            <AlertDescription :class="status.twoFactorEnabled ? undefined : 'text-orange-800 dark:text-orange-300'">{{ status.twoFactorEnabled ? `账号 ${status.email} 受验证器 App 保护。` : "建议在生产环境中启用，并妥善保存恢复代码。" }}</AlertDescription>
           </Alert>
 
           <template v-if="!status.twoFactorEnabled">
@@ -70,7 +70,7 @@
 
         <section v-else aria-labelledby="turnstile-title" class="grid gap-6">
           <div><h2 id="turnstile-title" class="text-xl font-semibold tracking-normal">Cloudflare Turnstile</h2><p class="mt-1 text-sm text-muted-foreground">为后台邮箱密码登录增加人机验证，降低自动化撞库与爆破风险。</p></div>
-          <Alert :class="status.turnstile.enabled ? undefined : 'border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400'"><ShieldCheckIcon v-if="status.turnstile.enabled" class="size-4" /><ShieldAlertIcon v-else class="size-4" /><AlertTitle>{{ status.turnstile.enabled ? "Turnstile 已启用" : "Turnstile 未完整配置" }}</AlertTitle><AlertDescription :class="status.turnstile.enabled ? undefined : 'text-orange-600 dark:text-orange-400'">{{ status.turnstile.enabled ? "后台登录会强制校验 Turnstile 令牌。" : "须同时配置站点 Key 和 Secret Key 才会启用。" }}</AlertDescription></Alert>
+          <Alert :class="status.turnstile.enabled ? undefined : 'border-orange-500/30 bg-orange-500/10 text-orange-800 dark:text-orange-300'"><ShieldCheckIcon v-if="status.turnstile.enabled" class="size-4" /><ShieldAlertIcon v-else class="size-4" /><AlertTitle>{{ status.turnstile.enabled ? "Turnstile 已启用" : "Turnstile 未完整配置" }}</AlertTitle><AlertDescription :class="status.turnstile.enabled ? undefined : 'text-orange-800 dark:text-orange-300'">{{ status.turnstile.enabled ? "后台登录会强制校验 Turnstile 令牌。" : "须同时配置站点 Key 和 Secret Key 才会启用。" }}</AlertDescription></Alert>
           <div class="rounded-md border bg-muted/30 p-4 text-sm leading-6">
             <p>在 Cloudflare Dashboard 创建 Turnstile 站点后，将以下变量配置到 Worker：</p>
             <pre class="mt-3 overflow-x-auto rounded bg-background p-3 font-mono text-xs">TURNSTILE_SITE_KEY=前端站点 Key

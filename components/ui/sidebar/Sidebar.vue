@@ -42,8 +42,8 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
       }"
     >
       <SheetHeader class="sr-only">
-        <SheetTitle>Sidebar</SheetTitle>
-        <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+        <SheetTitle>导航菜单</SheetTitle>
+        <SheetDescription>后台各页面的导航。</SheetDescription>
       </SheetHeader>
       <div class="flex h-full w-full flex-col">
         <slot />
@@ -51,7 +51,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
     </SheetContent>
   </Sheet>
 
-  <div
+  <aside
     v-else
     class="group peer text-sidebar-foreground hidden md:block"
     data-slot="sidebar"
@@ -92,5 +92,5 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
         <slot />
       </div>
     </div>
-  </div>
+  </aside>
 </template>

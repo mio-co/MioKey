@@ -28,6 +28,7 @@
 <script lang="ts" setup>
 import { toTypedSchema } from "@vee-validate/zod";
 import { Field as VeeField, useForm } from "vee-validate";
+import { focusFirstInvalid } from "@/lib/ui/focus-invalid";
 import { toast } from "vue-sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -57,5 +58,5 @@ const submit = handleSubmit(async ({ email }) => {
     // Keep the response indistinguishable to prevent account enumeration.
   }
   toast.success(messages.value.auth.forgotPassword.success);
-});
+}, () => { void focusFirstInvalid(); });
 </script>

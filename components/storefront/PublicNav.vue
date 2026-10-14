@@ -1,5 +1,5 @@
 <template>
-  <nav class="flex shrink-0 items-center gap-0.5 sm:gap-1" :aria-label="messages.nav.main">
+  <nav class="flex shrink-0 items-center gap-0.5 sm:gap-1" :aria-label="messages.nav.utility">
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
         <Button type="button" variant="ghost" size="icon" class="hidden rounded-full md:inline-flex" :aria-label="messages.preferences.language" :title="messages.preferences.language">
@@ -30,7 +30,7 @@
       </Transition>
     </Button>
     <template v-if="!user">
-      <Button size="sm" class="ml-1 h-10 rounded-full px-4 sm:px-5 md:h-9" as-child><a href="/login">{{ messages.nav.signIn }}</a></Button>
+      <Button size="sm" class="ml-1 h-11 rounded-full px-4 sm:px-5 md:h-9" as-child><a href="/login">{{ messages.nav.signIn }}</a></Button>
     </template>
     <template v-else>
       <DropdownMenu>

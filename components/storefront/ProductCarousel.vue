@@ -45,7 +45,7 @@ onBeforeUnmount(stop);
         >
           <a :href="`/product/${product.slug}`" class="group relative block">
             <div class="relative aspect-[4/3] overflow-hidden bg-muted sm:aspect-[16/11]">
-              <img :src="product.coverImage || defaultProductImage" :alt="product.name" :loading="i === 0 ? 'eager' : 'lazy'" class="size-full object-cover transition-transform duration-[1300ms] ease-out-expo group-hover:scale-105" />
+              <img :src="product.coverImage || defaultProductImage" :alt="product.name" width="800" height="600" :loading="i < 3 ? 'eager' : 'lazy'" :fetchpriority="i === 0 ? 'high' : undefined" decoding="async" class="size-full object-cover transition-transform duration-[1300ms] ease-out-expo group-hover:scale-105" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
               <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 text-white sm:p-7">
                 <div class="min-w-0">
