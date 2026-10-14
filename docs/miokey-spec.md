@@ -14,7 +14,8 @@ Vike + Vue 3 SSR、Hono、Telefunc、Drizzle + D1、better-auth、shadcn-vue（R
 ## Project Structure（本次涉及）
 - `components/storefront/`：StoreShell（公告条 + 吸顶头部 + 页脚）、StoreHeader（桌面导航、搜索抽屉、手机左侧菜单）、StoreDrawer、PublicNav、ProductCard、ProductCarousel、Reveal、AuthShell（登录类页面框架）。
 - `pages/tailwind.css`：设计 token、字体、动效、`.mk-store` / `.mk-auth` 作用域。
-- `lib/ui/`：drawer-history（抽屉与浏览器返回键联动）、scroll-lock、scroll-direction、reveal。
+- `lib/ui/`：drawer-history（抽屉与浏览器返回键联动，前台菜单与后台手机侧栏共用）、scroll-lock、scroll-direction、reveal、admin-confirm（Promise 式确认框）。
+- 后台（第二阶段）：`pages/@adminPath/+Layout.vue`（页头、页面过渡、返回顶部、命令面板、确认框宿主）、`components/AdminSidebar.vue`、`components/admin/`（AdminDataTable 骨架/手机卡片/右键菜单、AdminPageHeader、AdminCommandMenu、AdminConfirmHost）、`.mk-admin` 样式作用域。
 
 ## Design tokens（已定）
 - 字体：Archivo（正文）+ Poppins（标题），自托管 woff2；中文回退到系统字体（PingFang / 雅黑 / Noto）。
@@ -30,6 +31,7 @@ Vike + Vue 3 SSR、Hono、Telefunc、Drizzle + D1、better-auth、shadcn-vue（R
 ## Success Criteria
 - 用户可见的界面、文档、更新检查里没有 CFFK（README/NOTICE 的署名段除外）。
 - 375 / 390 / 768 / 1440 宽度下没有横向滚动；所有前台页面使用同一套外壳；暗色模式正常。
+- 后台：手机侧栏点击菜单项后关闭、返回键关闭抽屉；⌘/Ctrl+K 跳转；表格手机端可用；所有后台页无控制台错误。
 - 触控目标 ≥ 44px，键盘焦点可见，图标按钮都有可访问名称，动效遵守 reduced-motion。
 - typecheck 不新增错误，lint 0 error，tests 通过，build 成功。
 
