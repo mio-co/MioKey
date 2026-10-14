@@ -1,11 +1,12 @@
-import { and, count, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { getContext } from "telefunc";
 import { createDrizzleDb } from "@/database/drizzle";
-import { card, order, productSku } from "@/database/drizzle/schema";
+import { order, productSku } from "@/database/drizzle/schema";
 import { appError } from "@/lib/app-error";
 import { normalizeOrderEmail } from "@/lib/local-orders";
 import { reportUnexpectedServerError } from "@/server/error-handling";
 import { enqueueOrderEvent } from "@/server/email/order-events";
+import { ensureCardsReservedForPendingOrder } from "@/server/inventory/allocator";
 import { closePendingOrder, confirmOrderPayment, createOrder, type CreateOrderInput } from "@/server/order/service";
 import { getEnabledPaymentProvider } from "./config";
 import { getSiteSettings } from "@/server/site/public-settings";
@@ -119,8 +120,9 @@ export class PaymentFlowService {
 
     if (record.deliveryType === "CARD_AUTO") {
       if (record.productSkuId === null) appError("PRODUCT_SKU_NOT_AVAILABLE");
-      const [stock] = await db.select({ available: count() }).from(card).where(and(eq(card.productSkuId, record.productSkuId), eq(card.status, "UNUSED")));
-      if ((stock?.available ?? 0) < record.quantity) appError("PRODUCT_STOCK_NOT_ENOUGH");
+      // Orders hold their cards from creation; only an order without a full
+      // reservation (created before reservations existed) reserves here.
+      await ensureCardsReservedForPendingOrder(this.database, record.id, record.productSkuId, record.quantity);
     } else if ((record.deliveryType === "MANUAL" || record.deliveryType === "EXPRESS") && !record.physicalStockReserved) {
       if (record.productSkuId === null) appError("PRODUCT_SKU_NOT_AVAILABLE");
       const [sku] = await db.select({ physicalStock: productSku.physicalStock }).from(productSku).where(eq(productSku.id, record.productSkuId)).limit(1);

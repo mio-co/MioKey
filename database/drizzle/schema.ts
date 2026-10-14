@@ -272,7 +272,8 @@ export const card = sqliteTable(
     productId: integer("productId").notNull().references(() => productV2.id),
     productSkuId: integer("productSkuId").references(() => productSku.id),
     content: text("content").notNull(),
-    status: text("status", { enum: ["UNUSED", "SOLD", "DISABLED"] }).notNull().default("UNUSED"),
+    // RESERVED: held by a PENDING CARD_AUTO order (orderId set) until it is paid or closed.
+    status: text("status", { enum: ["UNUSED", "RESERVED", "SOLD", "DISABLED"] }).notNull().default("UNUSED"),
     batchNo: text("batchNo"),
     orderId: integer("orderId").references(() => order.id, { onDelete: "set null" }),
     soldAt: integer("soldAt", { mode: "timestamp_ms" }),

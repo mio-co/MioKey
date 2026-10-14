@@ -8,7 +8,7 @@ import { normalizeOrderEmail } from "@/lib/local-orders";
 import { canConfirmPayment } from "@/lib/order-state";
 import { formatCentsAsYuan } from "@/lib/payment-utils";
 import { validateDiscountForItem, positiveInteger } from "@/server/discount/service";
-import { allocateCardsForPaidOrder, countAvailableCards } from "@/server/inventory/allocator";
+import { allocateCardsForPaidOrder, cardReservationStatements, countAvailableCards } from "@/server/inventory/allocator";
 import { isTransactionGuardFailure } from "@/server/transaction-guard";
 import { reportUnexpectedServerError } from "@/server/error-handling";
 import { validateAddressId, validateAddressInput } from "@/server/address/validation";
@@ -156,6 +156,7 @@ export async function createOrder(database: D1Database, input: CreateOrderInput,
   }
 
   const reservePhysical = !isSupplier && (sku.deliveryType === "MANUAL" || sku.deliveryType === "EXPRESS") && sku.physicalStock !== null;
+  const reserveCards = !isSupplier && sku.deliveryType === "CARD_AUTO";
   const now = Date.now();
   const amount = Math.max(0, originalAmount - discountAmount);
   if (amount > 0 && input.allowPendingPayment === false) fail("PAYMENT_ADAPTER_NOT_AVAILABLE");
@@ -177,6 +178,11 @@ export async function createOrder(database: D1Database, input: CreateOrderInput,
       database.prepare("INSERT INTO transactionGuard (id, value) VALUES (1, changes()) ON CONFLICT(id) DO UPDATE SET value = excluded.value"),
     );
   }
+  if (reserveCards) {
+    // Hold the cards for this order inside the same batch: a concurrent create
+    // that finds fewer unreserved cards fails the guard and rolls back whole.
+    statements.push(...cardReservationStatements(database, { orderIdSql: "(SELECT id FROM `order` WHERE orderNo = ?)", orderIdValue: orderNo, productSkuId: sku.id, quantity, now }));
+  }
   if (discountId !== null) {
     statements.push(
       database.prepare("UPDATE discountCode SET reservedCount = reservedCount + 1, updatedAt = ? WHERE id = ? AND isActive = 1 AND (maxUses IS NULL OR usedCount + reservedCount < maxUses)").bind(now, discountId),
@@ -191,6 +197,7 @@ export async function createOrder(database: D1Database, input: CreateOrderInput,
         const [currentSku] = await db.select({ physicalStock: productSku.physicalStock }).from(productSku).where(eq(productSku.id, sku.id)).limit(1);
         if ((currentSku?.physicalStock ?? 0) < quantity) fail("PRODUCT_STOCK_NOT_ENOUGH");
       }
+      if (reserveCards && (await countAvailableCards(database, sku.id)) < quantity) fail("PRODUCT_STOCK_NOT_ENOUGH");
       if (discountId !== null) {
         const [currentDiscount] = await db.select({ isActive: discountCode.isActive, maxUses: discountCode.maxUses, usedCount: discountCode.usedCount, reservedCount: discountCode.reservedCount }).from(discountCode).where(eq(discountCode.id, discountId)).limit(1);
         if (!currentDiscount || !currentDiscount.isActive || (currentDiscount.maxUses !== null && currentDiscount.usedCount + currentDiscount.reservedCount >= currentDiscount.maxUses)) fail("DISCOUNT_CODE_EXHAUSTED");
@@ -445,6 +452,8 @@ export async function closePendingOrder(database: D1Database, orderId: number): 
   const now = Date.now();
   const statements: D1PreparedStatement[] = [];
   if (record.physicalStockReserved && record.productSkuId !== null) statements.push(database.prepare("UPDATE productSku SET physicalStock = physicalStock + ?, updatedAt = ? WHERE id = ? AND EXISTS (SELECT 1 FROM `order` WHERE id = ? AND status = 'PENDING' AND paymentStatus = 'UNPAID' AND physicalStockReserved = 1)").bind(record.quantity, now, record.productSkuId, orderId));
+  // Release CARD_AUTO cards reserved by this order while it is still unpaid.
+  statements.push(database.prepare("UPDATE card SET status = 'UNUSED', orderId = NULL, updatedAt = ? WHERE orderId = ? AND status = 'RESERVED' AND EXISTS (SELECT 1 FROM `order` WHERE id = ? AND status = 'PENDING' AND paymentStatus = 'UNPAID')").bind(now, orderId, orderId));
   if (record.discountCodeId !== null) statements.push(database.prepare("UPDATE discountCode SET reservedCount = CASE WHEN reservedCount > 0 THEN reservedCount - 1 ELSE 0 END, updatedAt = ? WHERE id = ? AND EXISTS (SELECT 1 FROM `order` WHERE id = ? AND status = 'PENDING' AND paymentStatus = 'UNPAID')").bind(now, record.discountCodeId, orderId));
   const orderUpdateIndex = statements.length;
   statements.push(
