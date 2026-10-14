@@ -30,6 +30,9 @@ export function paymentRepository(database: D1Database) {
       // Alipay and Epay return their platform trade number in callbacks, while
       // creation records the merchant order number. Their signed merchant
       // order number, provider and amount are verified by the callback flow.
+      // HashPay callbacks are only encrypted to the merchant key, not signed, so
+      // they must always name the HashPay order id stored from the create call.
+      if (provider === "HASHPAY" && !paymentOrderNo) return null;
       if (paymentOrderNo && provider !== "ALIPAY" && provider !== "EPAY") conditions.push(eq(paymentAttempt.paymentOrderNo, paymentOrderNo));
       const [record] = await db.select().from(paymentAttempt).where(and(...conditions)).orderBy(desc(paymentAttempt.id)).limit(1);
       return record ?? null;

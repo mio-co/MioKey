@@ -1,11 +1,13 @@
 import { appError } from "@/lib/app-error";
 
-export type OrderRequestAction = "QUERY" | "RESUME" | "RECOVERY";
+export type OrderRequestAction = "QUERY" | "RESUME" | "RECOVERY" | "CREATE" | "DISCOUNT";
 
 const WINDOW_MS = 60_000;
+// CREATE reserves stock and a discount use until the order expires, so it is
+// limited like RESUME. DISCOUNT is a read-only preview, limited like QUERY.
 const LIMITS = {
-  GUEST: { QUERY: 10, RESUME: 3, RECOVERY: 3 },
-  ACCOUNT: { QUERY: 60, RESUME: 10, RECOVERY: 3 },
+  GUEST: { QUERY: 10, RESUME: 3, RECOVERY: 3, CREATE: 3, DISCOUNT: 10 },
+  ACCOUNT: { QUERY: 60, RESUME: 10, RECOVERY: 3, CREATE: 10, DISCOUNT: 60 },
 } as const;
 
 function bytesToHex(bytes: Uint8Array) {

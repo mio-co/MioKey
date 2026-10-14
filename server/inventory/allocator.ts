@@ -2,11 +2,18 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { createDrizzleDb } from "@/database/drizzle";
 import { card } from "@/database/drizzle/schema";
 import { appError } from "@/lib/app-error";
+import { reportUnexpectedServerError } from "@/server/error-handling";
+
+// Only the transactionGuard CHECK means "another writer changed the rows";
+// any other batch failure is a real D1 error.
+export function isTransactionGuardFailure(cause: unknown) {
+  return String(cause).includes("transactionGuard_value_check");
+}
 
 export async function allocateCardsForPaidOrder(database: D1Database, orderId: number, quantity: number, productSkuId: number) {
   const db = createDrizzleDb(database);
   const count = Math.floor(quantity);
-  if (!Number.isInteger(count) || count < 1) throw new Error("CARD_QUANTITY_INVALID");
+  if (!Number.isInteger(count) || count < 1) appError("CARD_QUANTITY_INVALID");
 
   // A delivery retry can follow a successful allocation whose snapshot write
   // did not complete. Reuse only cards already sold to this exact order.
@@ -34,8 +41,10 @@ export async function allocateCardsForPaidOrder(database: D1Database, orderId: n
       database.prepare(`UPDATE card SET status = 'SOLD', orderId = ?, soldAt = ?, updatedAt = ? WHERE id IN (${candidateIds.map(() => "?").join(",")}) AND status = 'UNUSED'`).bind(orderId, now, now, ...candidateIds),
       database.prepare("INSERT INTO transactionGuard (id, value) VALUES (1, CASE WHEN changes() = ? THEN 1 ELSE 0 END) ON CONFLICT(id) DO UPDATE SET value = excluded.value").bind(missingCount),
     ]);
-  } catch {
-    appError("CARD_INVENTORY_SHORTAGE");
+  } catch (cause) {
+    if (isTransactionGuardFailure(cause)) appError("CARD_INVENTORY_SHORTAGE");
+    reportUnexpectedServerError("inventory-allocate-cards", cause, { orderId, productSkuId });
+    throw cause;
   }
   const allocated = await db.select({ id: card.id, content: card.content }).from(card).where(and(eq(card.orderId, orderId), eq(card.status, "SOLD"))).orderBy(asc(card.id));
   if (allocated.length !== count) appError("CARD_DELIVERY_COUNT_MISMATCH");

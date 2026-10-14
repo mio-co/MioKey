@@ -149,9 +149,14 @@ export class PaymentFlowService {
     if (amount !== undefined && amount !== record.amount) appError("PAYMENT_AMOUNT_MISMATCH");
     const attempt = paymentAttemptId ? await repository.findAttempt(paymentAttemptId) : null;
     if (paymentAttemptId && (!attempt || attempt.orderId !== record.id)) appError("PAYMENT_CALLBACK_INVALID");
-    const duplicatePayment = Boolean(paymentAttemptId && attempt?.status !== "PAID" && await repository.hasOtherPaidAttempt(record.id, paymentAttemptId));
+    let duplicatePayment = Boolean(paymentAttemptId && attempt?.status !== "PAID" && await repository.hasOtherPaidAttempt(record.id, paymentAttemptId));
     const result = await confirmOrderPayment(this.database, record.id);
-    if (paymentAttemptId && result.outcome !== "NOT_PAYABLE") await repository.markAttemptPaid(paymentAttemptId);
+    if (paymentAttemptId && result.outcome !== "NOT_PAYABLE") {
+      await repository.markAttemptPaid(paymentAttemptId);
+      // Re-check after the write: two callbacks for different attempts can both
+      // pass the first check before either marks its attempt PAID.
+      if (!duplicatePayment && attempt?.status !== "PAID" && await repository.hasOtherPaidAttempt(record.id, paymentAttemptId)) duplicatePayment = true;
+    }
 
     let outcome = result.outcome;
     let exceptionMessage: string | null = null;
@@ -184,8 +189,9 @@ export class PaymentFlowService {
         await this.confirm(orderNo, "QUERY", result.amount, attempt?.id);
         return (await import("@/server/order/service")).getOrderForQuery(this.database, orderNo, ownerUserId, email);
       }
-    } catch {
+    } catch (cause) {
       // A query failure must leave the local pending order queryable and retryable.
+      reportUnexpectedServerError("payment-query", cause, { orderId: record.id, orderNo, provider: provider.provider });
     }
     return queriedOrder;
   }

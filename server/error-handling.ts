@@ -45,9 +45,7 @@ function isVikeControlFlow(cause: unknown) {
 }
 
 export function isExpectedServerError(cause: unknown) {
-  return cause instanceof AppError
-    || isVikeControlFlow(cause)
-    || (cause instanceof Error && /^[A-Z][A-Z0-9_:-]+$/.test(cause.message));
+  return cause instanceof AppError || isVikeControlFlow(cause);
 }
 
 export async function captureRequest(request: Request): Promise<RequestSnapshot> {

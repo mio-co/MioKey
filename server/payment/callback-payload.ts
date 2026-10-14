@@ -1,4 +1,5 @@
-export class PaymentCallbackPayloadError extends Error {}
+import { AppError } from "@/lib/app-error";
+export class PaymentCallbackPayloadError extends AppError {}
 
 export const MAX_PAYMENT_CALLBACK_BYTES = 64 * 1024;
 const MAX_PAYMENT_CALLBACK_FIELDS = 64;

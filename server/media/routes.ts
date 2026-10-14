@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type { Context, Hono } from "hono";
 import { createDrizzleDb } from "@/database/drizzle";
 import { media } from "@/database/drizzle/schema";
-import { errorCode } from "@/lib/app-error";
+import { AppError } from "@/lib/app-error";
 import type { RuntimeAdapter } from "@universal-middleware/core";
 import { isRoot } from "@/server/admin";
 import { getRequestSession } from "@/server/better-auth-handler";
@@ -33,7 +33,7 @@ export function registerMediaRoutes(app: Hono<{ Bindings: Bindings }>) {
     const path = form.get("path");
     if (!(file instanceof File) || (path !== null && typeof path !== "string")) return context.json(body("MEDIA_UPLOAD_INVALID", "上传文件无效。"), 400);
     try { const data = await uploadMedia(context.env.DB, context.env, { file, path: path ?? undefined, uploadedBy: user.id }); return context.json(body(0 as unknown as string, "文件上传成功。", { id: data.id, originalName: data.originalName, url: data.url })); }
-    catch (error) { const code = errorCode(error); return context.json(body(code, "文件上传失败，请检查文件和存储配置。"), 400); }
+    catch (error) { if (!(error instanceof AppError)) throw error; return context.json(body(error.code, "文件上传失败，请检查文件和存储配置。"), 400); }
   });
   app.delete("/api/media/:id", async (context: Context<{ Bindings: Bindings }>) => {
     const user = await requireRoot(context);
@@ -46,7 +46,9 @@ export function registerMediaRoutes(app: Hono<{ Bindings: Bindings }>) {
       const result = await deleteMedia(context.env.DB, context.env, id, { cache: (caches as unknown as { default: Cache }).default, cacheOrigin: context.req.url });
       return context.json(body(0 as unknown as string, "媒体文件已删除。", result));
     } catch (error) {
-      return context.json(body(errorCode(error), "媒体文件删除失败，请稍后重试。"), 400);
+      // Only business errors are a 400; anything else goes to app.onError (500 + Observability).
+      if (!(error instanceof AppError)) throw error;
+      return context.json(body(error.code, "媒体文件删除失败，请稍后重试。"), 400);
     }
   });
   app.get("/media/proxy/*", async (context: Context<{ Bindings: Bindings }>) => {

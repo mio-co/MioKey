@@ -1,27 +1,22 @@
 import { onBeforeUnmount, watch, type Ref } from "vue";
 
 let locks = 0;
-let saved: { overflow: string; paddingRight: string } | null = null;
+let saved: { overflow: string } | null = null;
 
 function lock() {
   if (locks++ > 0) return;
   const body = document.body;
-  const scrollbar = window.innerWidth - document.documentElement.clientWidth;
-  saved = { overflow: body.style.overflow, paddingRight: body.style.paddingRight };
+  saved = { overflow: body.style.overflow };
   body.style.overflow = "hidden";
-  if (scrollbar > 0) body.style.paddingRight = `${scrollbar}px`;
 }
 
 function unlock() {
   if (locks === 0 || --locks > 0) return;
-  if (saved) {
-    document.body.style.overflow = saved.overflow;
-    document.body.style.paddingRight = saved.paddingRight;
-  }
+  if (saved) document.body.style.overflow = saved.overflow;
   saved = null;
 }
 
-/** Locks page scroll while `active` is true (ref-counted, compensates the scrollbar width). */
+/** Locks page scroll while `active` is true (ref-counted; html scrollbar-gutter: stable keeps layout from shifting). */
 export function useScrollLock(active: Ref<boolean>) {
   let held = false;
   watch(active, (value) => {

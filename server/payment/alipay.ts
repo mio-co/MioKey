@@ -153,7 +153,7 @@ export async function verifyAlipayCallback(configJson: string, parameters: Recor
   const signature = parameters.sign;
   if (!signature || parameters.sign_type !== "RSA2" || parameters.app_id !== config.appId || parameters.seller_id !== config.sellerId) return false;
   try {
-    return crypto.subtle.verify(
+    return await crypto.subtle.verify(
       "RSASSA-PKCS1-v1_5",
       await importPublicKey(config),
       fromBase64(signature),

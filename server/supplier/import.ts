@@ -10,6 +10,7 @@ export type SupplierDb = ReturnType<typeof requireAdmin>["db"];
 import type { SupplierProduct } from "./providers/types";
 import type { SupplierProvider } from "./schema";
 import { assertSupplierSkuPublishable } from "./eligibility";
+import { sanitizeProductDescription } from "@/server/catalog/product-description";
 
 export type SupplierImportInput = {
   provider: SupplierProvider;
@@ -37,7 +38,7 @@ export async function importSupplierProduct(db: SupplierDb, input: SupplierImpor
   if (catalogProduct.id !== input.productId) appError("SUPPLIER_PRODUCT_NOT_FOUND");
   const selected = catalogProduct.skus.filter((sku) => input.skuIds.includes(sku.id));
   if (!selected.length) appError("SUPPLIER_SKU_REQUIRED");
-  if (!/^(0|[1-9]\d*)$/.test(input.fixedMarkupMinor) || input.markupBps < 0 || input.markupBps > 1_000_000) appError("SUPPLIER_MARKUP_INVALID");
+  if (!/^(0|[1-9]\d*)$/.test(input.fixedMarkupMinor) || !Number.isInteger(input.markupBps) || input.markupBps < 0 || input.markupBps > 1_000_000) appError("SUPPLIER_MARKUP_INVALID");
   const [account] = await db.select({ currency: supplierAccount.currency }).from(supplierAccount).where(and(eq(supplierAccount.provider, input.provider), eq(supplierAccount.normalizedApiOrigin, input.normalizedApiOrigin), eq(supplierAccount.protocolVersion, input.protocolVersion), eq(supplierAccount.enabled, true))).limit(1);
   if (!account) appError("SUPPLIER_SOURCE_NO_ACCOUNT");
   const now = new Date();
@@ -46,7 +47,7 @@ export async function importSupplierProduct(db: SupplierDb, input: SupplierImpor
     ? [undefined]
     : await db.select({ id: category.id }).from(category).where(and(eq(category.slug, "default"), eq(category.status, "ACTIVE"))).limit(1);
   if (!existing && !defaultCategory) appError("PRODUCT_CATEGORY_REQUIRED");
-  const localProduct = existing ? (await db.select().from(productV2).where(eq(productV2.id, existing.productId)).limit(1))[0] : (await db.insert(productV2).values({ categoryId: defaultCategory!.id, name: catalogProduct.name, slug: uniqueSlug(catalogProduct.name, `${input.provider}-${input.productId}`), description: catalogProduct.description || catalogProduct.name, status: "DRAFT", createdAt: now, updatedAt: now }).returning())[0];
+  const localProduct = existing ? (await db.select().from(productV2).where(eq(productV2.id, existing.productId)).limit(1))[0] : (await db.insert(productV2).values({ categoryId: defaultCategory!.id, name: catalogProduct.name, slug: uniqueSlug(catalogProduct.name, `${input.provider}-${input.productId}`), description: sanitizeProductDescription(catalogProduct.description || catalogProduct.name) ?? sanitizeProductDescription(catalogProduct.name), status: "DRAFT", createdAt: now, updatedAt: now }).returning())[0];
   if (!localProduct) appError("SUPPLIER_IMPORT_FAILED");
   // A previous import may have created one synthetic SKU using the product
   // code. Once ACG exposes category SKUs, that binding is stale and must not

@@ -2,13 +2,14 @@ import { and, asc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { createDrizzleDb } from "@/database/drizzle";
 import { automaticDeliveryJob, customerAddress, discountCode, order, orderDelivery, productV2, productSku, supplierOrder } from "@/database/drizzle/schema";
 import { getProductSku } from "@/server/catalog/sku";
-import { appError } from "@/lib/app-error";
+import { AppError, appError } from "@/lib/app-error";
 import { isJsonFormEmail } from "@/lib/json-form-values";
 import { normalizeOrderEmail } from "@/lib/local-orders";
 import { canConfirmPayment } from "@/lib/order-state";
 import { formatCentsAsYuan } from "@/lib/payment-utils";
 import { validateDiscountForItem, positiveInteger } from "@/server/discount/service";
-import { allocateCardsForPaidOrder, countAvailableCards } from "@/server/inventory/allocator";
+import { allocateCardsForPaidOrder, countAvailableCards, isTransactionGuardFailure } from "@/server/inventory/allocator";
+import { reportUnexpectedServerError } from "@/server/error-handling";
 import { validateAddressId, validateAddressInput } from "@/server/address/validation";
 import { generateOrderNo } from "@/server/order/order-number";
 import { PaymentLogService } from "@/server/payment/log-service";
@@ -22,6 +23,9 @@ import { assertSupplierSkuOrderable } from "@/server/supplier/eligibility";
 const DELIVERY_LEASE_MS = 5 * 60 * 1000;
 
 type ContactType = "EMAIL" | "QQ" | "TELEGRAM" | "OTHER";
+const CONTACT_TYPES: readonly string[] = ["EMAIL", "QQ", "TELEGRAM", "OTHER"] satisfies ContactType[];
+const CONTACT_VALUE_MAX_LENGTH = 320;
+const BUYER_NOTE_MAX_LENGTH = 500;
 type PaymentProvider = "ALIPAY" | "EPAY" | "BEPUSDT" | "STRIPE" | "HASHPAY";
 
 export type CreateOrderInput = {
@@ -62,10 +66,21 @@ function normalizePaymentChannel(provider: PaymentProvider, channel?: string) {
 
 
 export function normalizeOrderContact(contactType: ContactType, value: string | undefined) {
+  if (typeof contactType !== "string" || !CONTACT_TYPES.includes(contactType)) fail("CONTACT_TYPE_INVALID");
+  if (value !== undefined && value !== null && typeof value !== "string") fail("CONTACT_VALUE_INVALID");
   const normalized = value?.trim() || null;
+  if (normalized && normalized.length > CONTACT_VALUE_MAX_LENGTH) fail("CONTACT_VALUE_TOO_LONG");
   if (!normalized) fail("CONTACT_VALUE_REQUIRED");
   if (contactType === "EMAIL" && !isJsonFormEmail(normalized)) fail("CONTACT_EMAIL_INVALID");
   return normalized;
+}
+
+function normalizeBuyerNote(value: string | undefined) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") fail("BUYER_NOTE_INVALID");
+  const normalized = value.trim();
+  if (normalized.length > BUYER_NOTE_MAX_LENGTH) fail("BUYER_NOTE_TOO_LONG");
+  return normalized || null;
 }
 
 function addressSnapshot(address: PaymentAddressInput): AddressSnapshot {
@@ -110,6 +125,7 @@ export async function createOrder(database: D1Database, input: CreateOrderInput,
   const productId = positiveInteger(input.productId, "PRODUCT_ID");
   const requestedQuantity = positiveInteger(input.quantity, "QUANTITY");
   const contactValue = normalizeOrderContact(input.contactType, input.contactValue);
+  const buyerNote = normalizeBuyerNote(input.buyerNote);
   const [item] = await db.select().from(productV2).where(and(eq(productV2.id, productId), eq(productV2.status, "ACTIVE"))).limit(1);
   if (!item) fail("PRODUCT_NOT_AVAILABLE");
   const sku = await getProductSku(db, item.id, positiveInteger(input.productSkuId, "PRODUCT_SKU_ID"));
@@ -147,7 +163,7 @@ export async function createOrder(database: D1Database, input: CreateOrderInput,
   const statements: D1PreparedStatement[] = [
     database.prepare("INSERT INTO `order` (orderNo, ownerUserId, productId, productSkuId, productNameSnapshot, productSkuNameSnapshot, unitPrice, quantity, amount, contactType, contactValue, contactEmailNormalized, buyerNote, addressSnapshotJson, paymentProvider, paymentChannel, fulfillmentSourceSnapshot, deliveryTypeSnapshot, fixedDeliveryContentSnapshot, physicalStockReserved, discountCodeId, discountCodeStr, originalAmount, discountAmount, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(
       orderNo, ownerUserId, item.id, sku.id, item.name, sku.name, sku.price, quantity, amount, input.contactType, contactValue,
-      input.contactType === "EMAIL" ? normalizeOrderEmail(contactValue) : null, input.buyerNote?.trim() || null,
+      input.contactType === "EMAIL" ? normalizeOrderEmail(contactValue) : null, buyerNote,
       addressSnapshotJson, input.paymentProvider, paymentChannel, sku.fulfillmentSource, sku.deliveryType,
       sku.deliveryType === "FIXED_CARD" ? sku.fixedDeliveryContent!.trim() : null, reservePhysical ? 1 : 0,
       discountId, discountCodeValue, discountId === null ? null : originalAmount, discountId === null ? null : discountAmount,
@@ -231,7 +247,11 @@ export async function confirmOrderPayment(database: D1Database, orderId: number)
   statements.push(database.prepare("INSERT INTO orderEvent (eventKey, orderId, scene, status, attemptCount, availableAt, createdAt, updatedAt) SELECT 'order-paid:' || id, id, 'ORDER_PAID', 'PENDING', 0, ?, ?, ? FROM `order` WHERE id = ? AND paymentStatus = 'PAID' ON CONFLICT(eventKey) DO NOTHING").bind(now, now, now, orderId));
   try {
     await database.batch(statements);
-  } catch {
+  } catch (cause) {
+    if (!isTransactionGuardFailure(cause)) {
+      reportUnexpectedServerError("order-confirm-payment", cause, { orderId });
+      throw cause;
+    }
     const [current] = await db.select({ paymentStatus: order.paymentStatus }).from(order).where(eq(order.id, orderId)).limit(1);
     if (current?.paymentStatus !== "PAID") return { outcome: "NOT_PAYABLE" };
   }
@@ -279,7 +299,9 @@ async function claimAutomaticDelivery(database: D1Database, orderId: number, tok
       database.prepare("INSERT INTO transactionGuard (id, value) VALUES (1, changes()) ON CONFLICT(id) DO UPDATE SET value = excluded.value"),
     ]);
     return true;
-  } catch {
+  } catch (cause) {
+    // A guard failure means another worker holds the delivery; anything else is a real error.
+    if (!isTransactionGuardFailure(cause)) reportUnexpectedServerError("order-claim-delivery", cause, { orderId });
     return false;
   }
 }
@@ -312,7 +334,9 @@ export async function deliverPaidOrder(database: D1Database, orderId: number): P
     ]);
     return { status: "DELIVERED" };
   } catch (cause) {
-    const errorCode = cause instanceof Error ? cause.message : "DELIVERY_FAILED";
+    // Store only a stable code; raw messages may carry SQL or provider text.
+    const errorCode = cause instanceof AppError ? cause.code : "DELIVERY_FAILED";
+    if (!(cause instanceof AppError)) reportUnexpectedServerError("order-deliver-paid-order", cause, { orderId });
     const failedAt = Date.now();
     await database.batch([
       database.prepare("INSERT INTO orderDelivery (orderId, deliveryType, attemptToken, contentSnapshot, errorCode, status, createdAt) SELECT id, ?, ?, NULL, ?, 'FAILED', ? FROM `order` WHERE id = ? AND deliveryStatus = 'DELIVERING' AND deliveryToken = ?").bind(deliveryType, token, errorCode, failedAt, orderId, token),
@@ -429,7 +453,9 @@ export async function closePendingOrder(database: D1Database, orderId: number): 
   try {
     const results = await database.batch(statements);
     if (results[orderUpdateIndex]?.meta.changes !== 1) return { closed: false };
-  } catch {
+  } catch (cause) {
+    // A guard failure means the order is no longer pending; anything else is a real error.
+    if (!isTransactionGuardFailure(cause)) reportUnexpectedServerError("order-close-pending", cause, { orderId });
     return { closed: false };
   }
   await new PaymentLogService(database).writeBestEffort({ orderId, provider: record.paymentProvider as PaymentProviderKind, orderNo: record.orderNo, eventType: "AUTO_CLOSE", verifyStatus: "PENDING", message: "订单超时未支付，已自动关闭（30分钟）", payload: {} });

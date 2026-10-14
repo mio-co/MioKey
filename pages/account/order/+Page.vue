@@ -54,7 +54,6 @@
 </template>
 
 <script setup lang="ts">
-import { navigate } from "vike/client/router";
 import { computed, onMounted, ref } from "vue";
 import { ArrowLeftIcon, SearchIcon } from "@lucide/vue";
 import { toast } from "vue-sonner";
@@ -138,7 +137,7 @@ async function resumePayment() {
   try {
     const payment = await runTelefunc(() => onResumeOrderPayment({ orderNo: activeOrderNo.value }), { notifyError: false });
     if (payment.payment?.mode === "redirect" && payment.payment.url) { window.location.assign(payment.payment.url); return; }
-    if (payment.payment?.mode === "qr") { cacheQrPayment(payment); await navigate(`/checkout?orderNo=${encodeURIComponent(payment.orderNo)}`); return; }
+    if (payment.payment?.mode === "qr") { cacheQrPayment(payment); window.location.assign(`/checkout?orderNo=${encodeURIComponent(payment.orderNo)}`); return; }
     toast.error(messages.value.accountOrders.payment.generateFailed);
   } catch (cause) { toast.error(userErrorMessage(cause, messages.value.accountOrders.payment.resumeFailed)); } finally { resumingPayment.value = false; }
 }

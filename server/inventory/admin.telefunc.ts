@@ -128,12 +128,18 @@ async function internalOnGetCardAdminData(input: CardAdminQuery = {}) {
   };
 }
 
+// One card is a key or an account line; 1,000 such cards fit well under the import cap.
+const CARD_CONTENT_MAX_LENGTH = 2_000;
+const CARD_IMPORT_MAX_LENGTH = 1_000 * (CARD_CONTENT_MAX_LENGTH + 2);
+
 async function internalOnCreateCard(input: { productId: number; productSkuId: number; content: string; batchNo?: string }) {
   const { db } = getAdminDb();
   const productId = positiveInteger(input.productId, "PRODUCT_ID");
   const productSkuId = await resolveCardSku(db, productId, input.productSkuId);
+  if (typeof input.content !== "string") appError("CARD_CONTENT_INVALID");
   const content = input.content.trim();
   if (!content) appError("CARD_CONTENT_REQUIRED");
+  if (content.length > CARD_CONTENT_MAX_LENGTH) appError("CARD_CONTENT_TOO_LONG");
   const batchNo = input.batchNo?.trim() || null;
   const now = new Date();
   const [created] = await db.insert(card).values({
@@ -152,9 +158,12 @@ async function internalOnImportCards(input: { productId: number; productSkuId: n
   const { database, db } = requireAdmin();
   const productId = positiveInteger(input.productId, "PRODUCT_ID");
   const productSkuId = await resolveCardSku(db, productId, input.productSkuId);
+  if (typeof input.content !== "string") appError("CARD_CONTENT_INVALID");
+  if (input.content.length > CARD_IMPORT_MAX_LENGTH) appError("CARD_CONTENT_TOO_LONG");
   const contents = [...new Set(input.content.split(/\r?\n/).map((item) => item.trim()).filter(Boolean))];
   if (!contents.length) appError("CARD_CONTENT_REQUIRED");
   if (contents.length > 1000) appError("CARD_IMPORT_LIMIT_EXCEEDED");
+  if (contents.some((item) => item.length > CARD_CONTENT_MAX_LENGTH)) appError("CARD_CONTENT_TOO_LONG");
 
   const now = Date.now();
   const batchNo = input.batchNo?.trim() || null;

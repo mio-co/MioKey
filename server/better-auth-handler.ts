@@ -105,20 +105,16 @@ export const betterAuthHandler = enhance(
           .leftJoin(schema.adminBootstrap, eq(schema.adminBootstrap.userId, schema.user.id))
           .where(sql`lower(${schema.user.email}) = ${email}`)
           .limit(1);
-        if (isAdminLogin && (!account || account.disabledAt || !account.rootUserId)) {
-          return withAuthNoStore(Response.json(
-            { code: "INVALID_ADMIN_CREDENTIALS", message: "Invalid credentials." },
-            { status: 401 },
-          ));
-        }
-        if (!isAdminLogin && account?.rootUserId) {
+        // Every rejection here must look exactly like Better Auth's own wrong-password
+        // answer, so callers cannot tell root, other accounts and disabled accounts apart.
+        const rejected = (isAdminLogin && (!account || !account.rootUserId))
+          || (!isAdminLogin && Boolean(account?.rootUserId))
+          || Boolean(account?.disabledAt);
+        if (rejected) {
           return withAuthNoStore(Response.json(
             { code: "INVALID_EMAIL_OR_PASSWORD", message: "Invalid email or password" },
             { status: 401 },
           ));
-        }
-        if (account?.disabledAt) {
-          return withAuthNoStore(Response.json({ code: "ACCOUNT_DISABLED", message: "Account is disabled." }, { status: 403 }));
         }
       }
     }

@@ -1,4 +1,5 @@
 import { createProviderAdapter } from "./providers";
+import { appError } from "@/lib/app-error";
 import type { PaymentAdapter } from "./types";
 import { validateJsonFormValues, type JsonFormFieldDefinition, type JsonFormValues } from "@/lib/json-form-values";
 import {
@@ -171,12 +172,12 @@ export function getPaymentNotifyPath(provider: PaymentProviderKind) {
 
 export function parseProviderConfig(provider: string, configJson: string) {
   const definition = getProviderDefinition(provider);
-  if (!definition) throw new Error("PAYMENT_PROVIDER_NOT_IMPLEMENTED");
+  if (!definition) appError("PAYMENT_PROVIDER_NOT_IMPLEMENTED");
   let value: unknown;
-  try { value = JSON.parse(configJson); } catch { throw new Error("PAYMENT_CONFIG_INVALID"); }
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("PAYMENT_CONFIG_INVALID");
+  try { value = JSON.parse(configJson); } catch { appError("PAYMENT_CONFIG_INVALID"); }
+  if (!value || typeof value !== "object" || Array.isArray(value)) appError("PAYMENT_CONFIG_INVALID");
   const allowed = new Set(["schemaVersion", ...definition.fields.map((field) => field.key)]);
-  if (Object.keys(value).some((key) => !allowed.has(key))) throw new Error("PAYMENT_CONFIG_INVALID");
+  if (Object.keys(value).some((key) => !allowed.has(key))) appError("PAYMENT_CONFIG_INVALID");
   validateJsonFormValues(definition.fields, value as Record<string, unknown>);
   return definition.parseConfig(configJson);
 }

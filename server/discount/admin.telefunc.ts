@@ -14,7 +14,7 @@ function getAdminDb() {
   const { db } = requireAdmin();
   return { db };
 }
-function code(value: string) { const result = value.trim().toUpperCase(); if (!/^[A-Z0-9_-]{2,64}$/.test(result)) appError("DISCOUNT_CODE_INVALID"); return result; }
+function code(value: string) { if (typeof value !== "string") appError("DISCOUNT_CODE_INVALID"); const result = value.trim().toUpperCase(); if (!/^[A-Z0-9_-]{2,64}$/.test(result)) appError("DISCOUNT_CODE_INVALID"); return result; }
 function integer(value: number, field: string, min = 0) { if (!Number.isInteger(value) || value < min) appError(`${field}_INVALID`); return value; }
 function productIds(value?: string) { const ids = (value ?? "").split(",").map((item) => Number(item.trim())).filter((item) => Number.isInteger(item) && item > 0); return ids.length ? [...new Set(ids)].join(",") : null; }
 
