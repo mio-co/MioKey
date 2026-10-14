@@ -49,3 +49,41 @@
 - Tailwind v4 的 `translate-*` 用的是独立 `translate` 属性，弹窗动画关键帧只用 `transform` 做位移/缩放，避免与居中位移叠加。
 - 内部 `cffk` 标识保持不变（已定决策）：`x-cffk-*` 请求头、`cffk-local-*` 存储键、`cffk:` / `cffk-` 前缀、`.__cffk_probe`、`cffk_db`——为兼容已部署站点与上游同步，用户不可见。
 - 不做的：没有给已有的各页确认 Dialog 换成 confirmAction（那会改页面脚本），只统一了样式与动画；行内按钮与右键菜单共用插槽，不另造菜单项数据。
+
+
+## Cycle 1 — 评估 → 学习 → 修改 → 测试（2026-10-14，提交 eb69d69）
+
+（本节根据 cycle-1 代理的报告补写；该代理在写日志前用完了迭代次数。）
+
+### Findings (ranked)
+1. Admin delivery dialog ignored order type (auto orders showed confirm/mark-failed; manual showed retry auto); empty content could be confirmed; Esc disabled.
+2. Mobile product page: sticky buy bar and in-page buy button visible together.
+3. Buyer order query: delivery contents one <pre>, no copy button.
+4. Order page copy too technical ("OTP", "原子覆盖本机分组").
+5. Manual-delivery products said "付款后自动发货".
+6. a11y (axe): logo aria-label mismatch; carousel <a role=group> invalid; email/coupon inputs unlabeled; login/signup no h1; two <main> in admin; admin filter Select unnamed; "Close"/"Toggle Sidebar" English; no skip link; mobile touch targets 32–40px; login step number contrast 3.81.
+7. Admin order detail card header blank band.
+8. SEO (SEOmator product page 88/B): <head> boot script empty under SSR (v-html on dynamic component) → dark-mode flash, reveal broken; duplicate og:title/description; no Product JSON-LD; no robots.txt; main image missing width/height; signup page lost site settings (title "MioKey"); admin tab titles identical.
+
+### Changes (frontend only; payment page scripts unchanged except component imports)
+- components/storefront/DeliveryContents.vue (per-item copy + copy all, aria-live); plain-language order copy; heading order; CardTitle `as` prop.
+- StickyBuyBar.vue hides when in-page buy button visible; labelled inputs; "付款后人工发货" i18n key; image width/height; larger breadcrumb targets.
+- Storefront shell: skip link, focusable main, logo named by visible text, carousel structure fixed, 44px header/footer targets, auth card titles h1, step contrast raised.
+- SEO: +Head.vue uses :innerHTML (boot script restored); dedup og tags; Product + BreadcrumbList JSON-LD; public/robots.txt; signup onBeforeRender passes site settings.
+- Admin: delivery dialog shows only valid actions per order type, confirm/mark-failed disabled when empty; SidebarInset main→div, single main + skip link; pages/@adminPath/+title.ts ("页面 · 后台 · 店名"); Select aria-labels; Chinese UI strings; 44px mobile header/popover buttons; card header gap fixed.
+- scripts/dev-seed-orders.sql: 7 local demo orders (pending, manual pending, delivered card/fixed, closed, delivery failed, auto incomplete). No schema change.
+
+### Tests
+typecheck 39 (= baseline); eslint 0/0; unit 98/0; vike build OK; p1 20 paths 200, no console errors/overflow; p2 desktop 32 + mobile 38 pass; new miokey-qa/regress.py 4 groups 0 FAIL. axe re-run only desktop storefront (remaining moderate landmark-unique, region; product-page red notice contrast disappeared only because local EPAY enabled). SEOmator not re-run.
+server/database diff vs upstream: unchanged, branding strings only (6 files +24/−24).
+
+### Deferred
+- Empty form submit: toast only, no focus/aria-invalid (product page is payment-related; script change needs care).
+- Short product descriptions; no sitemap (server route); security headers (server).
+- axe region / landmark-unique (promo bar, header nav naming).
+- Admin small targets: push settings ~20, Telegram 6.
+- zh-TW new strings auto-converted, not reviewed.
+- amaeru.com ideas not implemented: header search with popular terms + recommended products, "From" price, promo bar.
+
+### Local env (not committed)
+Demo orders in local D1; local EPAY enabled with fake gateway pay.example.com (buyer flow redirects to dead gateway — expected). chromium + fonts-noto-cjk reinstalled; axe-core and seomator installed under miokey-qa.
