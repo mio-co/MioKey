@@ -87,3 +87,31 @@ server/database diff vs upstream: unchanged, branding strings only (6 files +24/
 
 ### Local env (not committed)
 Demo orders in local D1; local EPAY enabled with fake gateway pay.example.com (buyer flow redirects to dead gateway — expected). chromium + fonts-noto-cjk reinstalled; axe-core and seomator installed under miokey-qa.
+
+
+## Cycle 2 — 评估 → 学习 → 修改 → 测试（2026-10-14，提交 c073e1f）
+
+（本节由 Cycle 3 代理补写：Cycle 2 代理在提交推送后、写日志和报告测试前崩溃。变更内容取自提交本身，测试结果为 Cycle 3 开始时在 c073e1f 上重新跑出的。）
+
+### Findings（来自 Cycle 1 遗留 + axe/SEOmator 复查）
+1. axe `region` / `landmark-unique`：公告条、侧栏不在地标内；多个 `<nav>` 同名。
+2. 表单空提交只有 toast，没有焦点/aria-invalid（登录、注册、找回/重置密码、两步验证、账户页）。
+3. SEO：无 sitemap；首页缺 WebSite JSON-LD 和 og:image；商品 JSON-LD Offer 没有 price；各页标题格式不一。
+4. zh-TW 新字串是机器转换，用语不地道。
+5. 后台：推送等设置页小触控目标；表格首屏 SSR 出现空状态闪烁。
+
+### Changes
+- 地标：公告条 `<aside aria-label>`；后台 Sidebar 包进命名 `<nav>`；PublicNav/StoreHeader 各导航 `aria-label` 唯一。
+- 新增 `lib/ui/focus-invalid.ts`：提交失败时聚焦第一个无效字段并设 `aria-invalid`；接入 login / signup / forgot / reset / two-factor / account（非支付页）。
+- SEO：`server/seo/sitemap.ts`（只读查询已上架商品生成 sitemap.xml）+ `server/hono.ts` 两行注册——经批准的只增路由，不动现有路由/契约；`+Head.vue` 首页 WebSite JSON-LD、绝对地址 og:image；商品 Offer 带 `price`/`priceCurrency`；`lib/seo/page-title.ts` 统一“页面 · 店名”。
+- zh-TW 用语校订（9 处）；CardTitle 小调；Pagination 中文标签。
+- 后台：AdminDataTable SSR 首屏骨架（不再闪空状态）；dash/push/wecom/security 触控尺寸。
+- 测试：`tests/core/seo-sitemap-title.test.ts`；regress.py 增加 c2-* 断言（登录聚焦、标题、sitemap、首页 SEO、导航命名唯一、Offer 价格、后台侧栏地标、表格骨架）。
+
+### Tests（在 c073e1f 上，Cycle 3 开始时）
+- typecheck（miokey-qa/tsc，vue-tsc）39 = 基线，无新增；eslint 0 错误 0 警告；unit 100 pass / 0 fail（14 文件）；vike build 成功（约 2 分钟）。
+- p1_check：20 路径 200，无 console 错误、无横向溢出（30 条记录）。p2_check：桌面 32 / 手机 38 全部通过。
+- regress.py：桌面前台 16、桌面后台 7、手机前台 18、手机后台 8，0 FAIL。
+- axe：手机前台 7 页 0 违规；后台（桌面+手机各 16 页）只剩 `heading-order`（moderate，6 页：CardTitle 默认 h3 跳过 h2）。
+- SEOmator 商品页：90 / A（Cycle 1 为 88 / B）。剩余多为部署层（HTTPS、安全头、压缩、HTTP/2），可前端处理的：LCP 图无 fetchpriority、robots.txt 未引用 sitemap、meta description 偏短（数据内容）。
+- 环境注：沙箱重置后 chromium / fonts-noto-cjk 需重装（apt）；`bunx` 不在 PATH，用 `bun x`；build 超过 120s，需后台运行。
